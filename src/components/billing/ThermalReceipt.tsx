@@ -67,7 +67,7 @@ export function ThermalReceipt({
   
   // Paid/Advance amount
   const paidAmount = Number(bill.cashReceived) || 0;
-  const dueAmount = Math.round(Math.max(0, roundedTotal - paidAmount - refundAmount));
+  const dueAmount = roundedTotal - paidAmount - refundAmount;
   
   // Final amount after returns
   const finalAmount = dueAmount;
@@ -127,9 +127,7 @@ export function ThermalReceipt({
   return (
     <div
       style={{
-        width: '52mm',
-        minHeight: '450px',
-        margin: '0 auto',
+width: '400px',
         backgroundColor: '#ffffff',
         fontFamily: '"Courier New", Courier, monospace',
         fontSize: '12px',
@@ -366,21 +364,7 @@ export function ThermalReceipt({
            </div>
          )}
 
-         {/* Change Given (for Cash payments with excess) */}
-         {bill.paymentMode === 'Cash' && paidAmount > 0 && dueAmount > 0 && (
-           <div style={{
-             display: 'flex',
-             justifyContent: 'space-between',
-             fontSize: '10px',
-             marginTop: '3px',
-             paddingTop: '3px',
-             borderTop: '1px dotted #ccc'
-           }}>
-             <span>Change Given</span>
-             <span style={{ fontFamily: '"Geist Mono", monospace' }}>
-               ₹{dueAmount.toFixed(2)}
-             </span>
-           </div>
+
          )}
 
         {/* Final Amount */}

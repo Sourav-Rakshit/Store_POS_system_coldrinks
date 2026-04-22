@@ -7,8 +7,7 @@ import {
   captureReceiptAsBase64, 
   downloadBillImage, 
   shareBillImage,
-  shareViaWhatsApp,
-  openTinyPrintApp
+  shareViaWhatsApp
 } from '@/lib/generateBillImage';
 import { useToast } from '@/components/Toast';
 import { Check, Download, Share2, MessageCircle, Printer, X, Loader2 } from 'lucide-react';
@@ -33,7 +32,7 @@ export function BillSuccessModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isWhatsapping, setIsWhatsapping] = useState(false);
-  const [isTinyPrinting, setIsTinyPrinting] = useState(false);
+
   const { addToast } = useToast();
 
   // Get shop details for sharing
@@ -138,7 +137,7 @@ export function BillSuccessModal({
 
   if (!isOpen) return null;
 
-  const isAnyLoading = isDownloading || isSharing || isWhatsapping || isTinyPrinting;
+  const isAnyLoading = isDownloading || isSharing || isWhatsapping;
 
   return (
     <>
@@ -262,19 +261,15 @@ export function BillSuccessModal({
               </button>
             </div>
 
-             {/* Print Button - Shares to TinyPrint */}
-             <button
-               onClick={handleTinyPrint}
-               disabled={isAnyLoading}
-               className="w-full flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
-             >
-               {isTinyPrinting ? (
-                 <Loader2 className="w-5 h-5 animate-spin" />
-               ) : (
-                 <Printer className="w-5 h-5" />
-               )}
-               Print
-             </button>
+            {/* Print Button */}
+            <button
+              onClick={() => window.print()}
+              disabled={isAnyLoading}
+              className="w-full flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
+            >
+              <Printer className="w-5 h-5" />
+              Print
+            </button>
 
             {/* New Bill - Ghost */}
             <button
@@ -289,26 +284,7 @@ export function BillSuccessModal({
         </div>
       </div>
 
-      {/* Print Styles - Only show receipt when printing */}
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #print-receipt, #print-receipt * {
-            visibility: visible;
-          }
-          #print-receipt {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 400px;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
+
     </>
   );
 }

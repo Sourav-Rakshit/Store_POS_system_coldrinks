@@ -350,20 +350,37 @@ export function ThermalReceipt({
           </div>
         )}
 
-        {/* Due Amount */}
-        {dueAmount > 0 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: '#cc0000',
-            marginTop: '3px'
-          }}>
-            <span>Due Amount</span>
-            <span>₹{dueAmount.toFixed(2)}</span>
-          </div>
-        )}
+         {/* Due Amount */}
+         {dueAmount > 0 && (
+           <div style={{
+             display: 'flex',
+             justifyContent: 'space-between',
+             fontSize: '12px',
+             fontWeight: 'bold',
+             color: '#cc0000',
+             marginTop: '3px'
+           }}>
+             <span>Due Amount</span>
+             <span>₹{dueAmount.toFixed(2)}</span>
+           </div>
+         )}
+
+         {/* Change Given (for Cash payments with excess) */}
+         {bill.paymentMode === 'Cash' && bill.cashReceived && Number(bill.cashReceived) > Number(bill.totalAmount) && (
+           <div style={{
+             display: 'flex',
+             justifyContent: 'space-between',
+             fontSize: '10px',
+             marginTop: '3px',
+             paddingTop: '3px',
+             borderTop: '1px dotted #ccc'
+           }}>
+             <span>Change Given</span>
+             <span style={{ fontFamily: '"Geist Mono", monospace' }}>
+               ₹{(Number(bill.cashReceived) - Number(bill.totalAmount)).toFixed(2)}
+             </span>
+           </div>
+         )}
 
         {/* Final Amount */}
         {showReturnSection && (

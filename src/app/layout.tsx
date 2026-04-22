@@ -35,7 +35,6 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Cold Drinks POS',
   },
-  mobileWebAppCapable: 'yes',
 };
 
 export default function RootLayout({

@@ -140,8 +140,6 @@ export async function openTinyPrintApp(): Promise<void> {
       window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
     } catch (e) {
       console.log('TinyPrint app not installed, fallback to download');
-    }
-  }
 }
 
 /**
@@ -170,6 +168,7 @@ export async function shareViaWhatsApp(
     console.error('Error sharing via WhatsApp:', error);
     throw error;
   }
+}
 }
 
 

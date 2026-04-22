@@ -19,7 +19,7 @@ const iconOptions = [
   { name: 'Beer', icon: Beer },
 ];
 
-const categories: ProductCategory[] = ['All', 'Sodas', 'Juices', 'Energy Drinks', 'Water'];
+const categories: ProductCategory[] = ['All', 'Soft Drinks', 'Juices', 'Energy Drinks', 'Water', 'Others'];
 
 export default function ProductsPage() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 // Product related types
-export type ProductCategory = 'Soft Drinks' | 'Juices' | 'Energy Drinks' | 'Water' | 'Others';
+export type ProductCategory = 'All' | 'Soft Drinks' | 'Juices' | 'Energy Drinks' | 'Water' | 'Others';
 
 export interface ProductSize {
   id: string;

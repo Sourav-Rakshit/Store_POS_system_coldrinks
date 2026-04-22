@@ -127,14 +127,14 @@ export function ThermalReceipt({
   return (
 <div
       style={{
-        width: '54mm',
+        width: '52mm',
         minHeight: '450px',
         margin: '0 auto',
         backgroundColor: '#ffffff',
         fontFamily: '"Courier New", Courier, monospace',
-        fontSize: '14px',
+        fontSize: '10px',
         color: '#000000',
-        padding: '10px',
+        padding: '0',
         boxSizing: 'border-box',
       }}
     >
@@ -200,13 +200,10 @@ export function ThermalReceipt({
       {/* Items Header */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '120px 25px 30px 30px',
+        gridTemplateColumns: '90px 20px 25px 25px',
         gap: '1px',
-        fontSize: '8px',
-        fontWeight: 'bold',
-        borderBottom: '1px dashed #000',
-        paddingBottom: '2px',
-        marginBottom: '2px'
+        fontSize: '7px',
+        marginBottom: '1px'
       }}>
         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Item</span>
         <span style={{ textAlign: 'center' }}>Qty</span>
@@ -220,13 +217,10 @@ export function ThermalReceipt({
           key={index}
           style={{
             display: 'grid',
-            gridTemplateColumns: '120px 25px 30px 30px',
+            gridTemplateColumns: '90px 20px 25px 25px',
             gap: '1px',
-            fontSize: '8px',
-            marginBottom: '1px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            fontSize: '7px',
+            marginBottom: '1px'
           }}
         >
           <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.productName}</span>
@@ -246,7 +240,7 @@ export function ThermalReceipt({
             borderBottom: '1px dashed #000',
             paddingBottom: '6px'
           }}>
-            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#cc0000' }}>
+            <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#cc0000' }}>
               RETURNED ITEMS:
             </div>
             {returnedItems.map((item, index) => (
@@ -254,15 +248,15 @@ export function ThermalReceipt({
                 key={index}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 30px 55px',
-                  gap: '4px',
-                  fontSize: '10px',
-                  marginBottom: '2px',
+                  gridTemplateColumns: '1fr 25px 40px',
+                  gap: '3px',
+                  fontSize: '8px',
+                  marginBottom: '1px',
                   color: '#cc0000',
                   textDecoration: 'line-through'
                 }}
               >
-                <span>{item.productName} {item.sizeName}</span>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.productName} {item.sizeName}</span>
                 <span style={{ textAlign: 'center' }}>{formatQty(item.quantity, item.packaging)}</span>
                 <span style={{ textAlign: 'right' }}>₹{Number(item.totalPrice).toFixed(2)}</span>
               </div>
@@ -270,7 +264,7 @@ export function ThermalReceipt({
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: '10px',
+              fontSize: '8px',
               fontWeight: 'bold',
               marginTop: '4px',
               color: '#cc0000'
@@ -292,7 +286,7 @@ export function ThermalReceipt({
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          fontSize: '10px',
+          fontSize: '8px',
           marginBottom: '3px'
         }}>
           <span>Item Total</span>
@@ -302,7 +296,7 @@ export function ThermalReceipt({
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          fontSize: '10px',
+          fontSize: '8px',
           marginBottom: '3px'
         }}>
           <span>Sub Total</span>
@@ -311,159 +305,159 @@ export function ThermalReceipt({
 
         {/* Round Off */}
          {    roundedTotal !== Math.round(roundedTotal) && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '8px',
+              marginBottom: '3px'
+            }}>
+              <span>Adjusted Total</span>
+              <span>₹{(roundedTotal - itemTotal).toFixed(2)}</span>
+            </div>
+          )}
+
+         {/* Grand Total */}
+         <div style={{
+           borderTop: '1px solid #000',
+           borderBottom: '1px solid #000',
+           padding: '4px 0',
+           marginTop: '4px'
+         }}>
            <div style={{
              display: 'flex',
              justifyContent: 'space-between',
              fontSize: '10px',
-             marginBottom: '3px'
+             fontWeight: 'bold'
            }}>
-             <span>Adjusted Total</span>
-             <span>₹{(roundedTotal - itemTotal).toFixed(2)}</span>
+             <span>GRAND TOTAL</span>
+             <span>₹{roundedTotal.toFixed(2)}</span>
+           </div>
+         </div>
+
+         {/* Paid Amount */}
+         {paidAmount > 0 && (
+           <div style={{
+             display: 'flex',
+             justifyContent: 'space-between',
+             fontSize: '9px',
+             marginTop: '4px'
+           }}>
+             <span>Paid Amount</span>
+             <span>₹{paidAmount.toFixed(2)}</span>
            </div>
          )}
 
-        {/* Grand Total */}
-        <div style={{
-          borderTop: '1px solid #000',
-          borderBottom: '1px solid #000',
-          padding: '6px 0',
-          marginTop: '4px'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '13px',
-            fontWeight: 'bold'
-          }}>
-             <span>GRAND TOTAL</span>
-             <span>₹{roundedTotal.toFixed(2)}</span>
-          </div>
-        </div>
+          {/* Due Amount */}
+          {dueAmount > 0 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              color: '#cc0000',
+              marginTop: '3px'
+            }}>
+              <span>Due Amount</span>
+              <span>₹{dueAmount.toFixed(2)}</span>
+            </div>
+ )}
 
-        {/* Paid Amount */}
-        {paidAmount > 0 && (
+         {/* Final Amount */}
+        {showReturnSection && (
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             fontSize: '10px',
-            marginTop: '6px'
+            fontWeight: 'bold',
+            marginTop: '4px',
+            padding: '4px',
+            backgroundColor: '#f0f0f0',
+            border: '1px solid #ccc'
           }}>
-            <span>Paid Amount</span>
-            <span>₹{paidAmount.toFixed(2)}</span>
-          </div>
+              <span>FINAL AMOUNT</span>
+              <span>₹{dueAmount.toFixed(2)}</span>
+            </div>
         )}
-
-         {/* Due Amount */}
-         {dueAmount > 0 && (
-           <div style={{
-             display: 'flex',
-             justifyContent: 'space-between',
-             fontSize: '12px',
-             fontWeight: 'bold',
-             color: '#cc0000',
-             marginTop: '3px'
-           }}>
-             <span>Due Amount</span>
-             <span>₹{dueAmount.toFixed(2)}</span>
-           </div>
-)}
-
-        {/* Final Amount */}
-       {showReturnSection && (
-         <div style={{
-           display: 'flex',
-           justifyContent: 'space-between',
-           fontSize: '12px',
-           fontWeight: 'bold',
-           marginTop: '6px',
-           padding: '6px',
-           backgroundColor: '#f0f0f0',
-           border: '1px solid #ccc'
-         }}>
-             <span>FINAL AMOUNT</span>
-             <span>₹{dueAmount.toFixed(2)}</span>
-           </div>
-       )}
       </div>
 
 {/* Amount in Words */}
+      <div style={{
+        marginTop: '4px',
+        fontSize: '7px',
+        paddingTop: '3px',
+        borderTop: '1px dashed #000'
+      }}>
+        <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(dueAmount)} Only
+      </div>
+
+      {/* Change Given (for Cash payments with excess) */}
+      {bill.paymentMode === 'Cash' && Number(bill.cashReceived) > roundedTotal && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          fontSize: '10px',
+          marginTop: '3px',
+          paddingTop: '3px',
+          borderTop: '1px dotted #ccc'
+        }}>
+            <span>Change Given</span>
+            <span style={{ fontFamily: '"Geist Mono", monospace' }}>
+              ₹{(roundedTotal - Number(bill.cashReceived))}
+            </span>
+          </div>
+      )}
+
+       {/* Payment Method */}
        <div style={{
          marginTop: '8px',
          fontSize: '10px',
-         paddingTop: '6px',
-         borderTop: '1px dashed #000'
+         textAlign: 'center',
+         padding: '4px',
+         backgroundColor: '#f0f0f0'
        }}>
-         <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(dueAmount)} Only
+         <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentMethod()}
        </div>
 
-       {/* Change Given (for Cash payments with excess) */}
-       {bill.paymentMode === 'Cash' && Number(bill.cashReceived) > roundedTotal && (
+       {/* Status Stamp */}
+       {status && (
          <div style={{
-           display: 'flex',
-           justifyContent: 'space-between',
-           fontSize: '10px',
-           marginTop: '3px',
-           paddingTop: '3px',
-           borderTop: '1px dotted #ccc'
+           textAlign: 'center',
+           marginTop: '10px',
+           padding: '6px 0'
          }}>
-           <span>Change Given</span>
-           <span style={{ fontFamily: '"Geist Mono", monospace' }}>
-             ₹{(roundedTotal - Number(bill.cashReceived))}
+           <span style={{
+             fontSize: '14px',
+             fontWeight: 'bold',
+             color: 
+               status === 'PAID' ? '#28a745' : 
+               status === 'DUE' ? '#fd7e14' : 
+               '#dc3545',
+             border: `2px solid ${
+               status === 'PAID' ? '#28a745' : 
+               status === 'DUE' ? '#fd7e14' : 
+               '#dc3545'
+             }`,
+             padding: '3px 10px',
+             borderRadius: '3px',
+             transform: 'rotate(-5deg)',
+             display: 'inline-block'
+           }}>
+             {status}
            </span>
          </div>
        )}
 
-      {/* Payment Method */}
-      <div style={{
-        marginTop: '8px',
-        fontSize: '10px',
-        textAlign: 'center',
-        padding: '4px',
-        backgroundColor: '#f0f0f0'
-      }}>
-        <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentMethod()}
-      </div>
-
-      {/* Status Stamp */}
-      {status && (
-        <div style={{
-          textAlign: 'center',
-          marginTop: '12px',
-          padding: '8px 0'
-        }}>
-          <span style={{
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: 
-              status === 'PAID' ? '#28a745' : 
-              status === 'DUE' ? '#fd7e14' : 
-              '#dc3545',
-            border: `2px solid ${
-              status === 'PAID' ? '#28a745' : 
-              status === 'DUE' ? '#fd7e14' : 
-              '#dc3545'
-            }`,
-            padding: '4px 12px',
-            borderRadius: '4px',
-            transform: 'rotate(-5deg)',
-            display: 'inline-block'
-          }}>
-            {status}
-          </span>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={{
-        marginTop: '16px',
-        paddingTop: '8px',
-        borderTop: '1px dashed #000',
-        textAlign: 'center',
-        fontSize: '12px',
-        fontWeight: 'bold'
-      }}>
-        Thank You... Visit Again!
-      </div>
+       {/* Footer */}
+       <div style={{
+         marginTop: '12px',
+         paddingTop: '6px',
+         borderTop: '1px dashed #000',
+         textAlign: 'center',
+         fontSize: '9px',
+         fontWeight: 'bold'
+       }}>
+         Thank You... Visit Again!
+       </div>
     </div>
   );
 }

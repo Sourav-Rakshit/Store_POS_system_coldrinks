@@ -63,14 +63,14 @@ export function ThermalReceipt({
   // Calculate totals
   const itemTotal = billItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
   const roundOff = Math.round(itemTotal) - itemTotal;
-  const grandTotal = Math.round(itemTotal);
+  const roundedTotal = Math.round(itemTotal);
   
   // Paid/Advance amount
   const paidAmount = Number(bill.cashReceived) || 0;
-  const dueAmount = grandTotal - paidAmount - refundAmount;
+  const dueAmount = Math.round(Math.max(0, roundedTotal - paidAmount - refundAmount));
   
   // Final amount after returns
-  const finalAmount = grandTotal - paidAmount - refundAmount;
+  const finalAmount = dueAmount;
 
   // Format date and time
   const billDate = bill.createdAt 
@@ -127,8 +127,9 @@ export function ThermalReceipt({
   return (
     <div
       style={{
-        width: '280px',
+        width: '52mm',
         minHeight: '450px',
+        margin: '0 auto',
         backgroundColor: '#ffffff',
         fontFamily: '"Courier New", Courier, monospace',
         fontSize: '12px',
@@ -307,17 +308,17 @@ export function ThermalReceipt({
         </div>
 
         {/* Round Off */}
-        {roundOff !== 0 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '10px',
-            marginBottom: '3px'
-          }}>
-            <span>Round Off</span>
-            <span>₹{roundOff.toFixed(2)}</span>
-          </div>
-        )}
+         {    roundedTotal !== Math.round(roundedTotal) && (
+           <div style={{
+             display: 'flex',
+             justifyContent: 'space-between',
+             fontSize: '10px',
+             marginBottom: '3px'
+           }}>
+             <span>Adjusted Total</span>
+             <span>₹{(roundedTotal - itemTotal).toFixed(2)}</span>
+           </div>
+         )}
 
         {/* Grand Total */}
         <div style={{
@@ -332,8 +333,8 @@ export function ThermalReceipt({
             fontSize: '13px',
             fontWeight: 'bold'
           }}>
-            <span>GRAND TOTAL</span>
-            <span>₹{grandTotal.toFixed(2)}</span>
+             <span>GRAND TOTAL</span>
+             <span>₹{roundedTotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -366,7 +367,7 @@ export function ThermalReceipt({
          )}
 
          {/* Change Given (for Cash payments with excess) */}
-         {bill.paymentMode === 'Cash' && bill.cashReceived && Number(bill.cashReceived) > Number(bill.totalAmount) && (
+         {bill.paymentMode === 'Cash' && paidAmount > 0 && dueAmount > 0 && (
            <div style={{
              display: 'flex',
              justifyContent: 'space-between',
@@ -377,27 +378,27 @@ export function ThermalReceipt({
            }}>
              <span>Change Given</span>
              <span style={{ fontFamily: '"Geist Mono", monospace' }}>
-               ₹{(Number(bill.cashReceived) - Number(bill.totalAmount)).toFixed(2)}
+               ₹{dueAmount.toFixed(2)}
              </span>
            </div>
          )}
 
         {/* Final Amount */}
-        {showReturnSection && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            marginTop: '6px',
-            padding: '6px',
-            backgroundColor: '#f0f0f0',
-            border: '1px solid #ccc'
-          }}>
-            <span>FINAL AMOUNT</span>
-            <span>₹{finalAmount.toFixed(2)}</span>
-          </div>
-        )}
+       {showReturnSection && (
+         <div style={{
+           display: 'flex',
+           justifyContent: 'space-between',
+           fontSize: '12px',
+           fontWeight: 'bold',
+           marginTop: '6px',
+           padding: '6px',
+           backgroundColor: '#f0f0f0',
+           border: '1px solid #ccc'
+         }}>
+             <span>FINAL AMOUNT</span>
+             <span>₹{dueAmount.toFixed(2)}</span>
+           </div>
+       )}
       </div>
 
       {/* Amount in Words */}
@@ -407,7 +408,7 @@ export function ThermalReceipt({
         paddingTop: '6px',
         borderTop: '1px dashed #000'
       }}>
-        <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(Math.round(grandTotal))} Only
+        <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(dueAmount)} Only
       </div>
 
       {/* Payment Method */}

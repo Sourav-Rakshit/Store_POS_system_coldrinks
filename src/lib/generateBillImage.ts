@@ -130,6 +130,21 @@ export function isMobileDevice(): boolean {
 }
 
 /**
+ * Open TinyPrint app via Android Intent to print a bill
+ * Package: com.frogtosea.tinyPrint
+ */
+export async function openTinyPrintApp(): Promise<void> {
+  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+    try {
+      // Try to open TinyPrint app directly
+      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
+    } catch (e) {
+      console.log('TinyPrint app not installed, fallback to download');
+    }
+  }
+}
+
+/**
  * Share via WhatsApp
  * Note: WhatsApp API cannot directly attach images, so we open WhatsApp with message and download the image
  */
@@ -157,65 +172,7 @@ export async function shareViaWhatsApp(
   }
 }
 
-/**
- * Share bill image to TinyPrint app via Android Intent
- * TinyPrint package: com.frogtosea.tinyPrint
- */
-export async function shareToTinyPrint(
-  element: HTMLElement,
-  invoiceNumber: string,
-  shopName: string
-): Promise<boolean> {
-  try {
-    // Capture receipt as base64
-    const dataUrl = await captureReceiptAsBase64(element);
 
-    // Convert base64 to blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-
-    // For web, we need to use Web Share API with file if supported
-    if (canUseWebShare()) {
-      const file = new File([blob], `INV-${invoiceNumber.replace('INV-', '')}.jpg`, {
-        type: 'image/jpeg',
-      });
-
-      const shareData = {
-        title: `Bill ${invoiceNumber} - ${shopName}`,
-        text: `Invoice: ${invoiceNumber}\nShop: ${shopName}\nShared via POS System`,
-        files: [file],
-      };
-
-      // Try to share - this will show share sheet including TinyPrint if installed
-      await navigator.share(shareData);
-      return true;
-    } else {
-      // Fallback: Download and try to open TinyPrint via intent
-      await downloadBillImage(element, invoiceNumber);
-
-      // Try to open TinyPrint app directly (Android only)
-      if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
-        try {
-          // Use intent URL to open TinyPrint app
-          const tinyPrintIntent = `intent:#Intent;action=android.intent.action.VIEW;package=com.frogtosea.tinyPrint;end`;
-          window.location.href = tinyPrintIntent;
-        } catch (e) {
-          // Intent failed - app probably not installed
-          console.log('TinyPrint app not installed');
-        }
-      }
-
-      return false;
-    }
-  } catch (error: any) {
-    if (error.name !== 'AbortError') {
-      console.error('Error sharing to TinyPrint:', error);
-      // Fallback to download
-      await downloadBillImage(element, invoiceNumber);
-    }
-    return false;
-  }
-}
 
 /**
  * Download a receipt as a PDF file

@@ -6,9 +6,9 @@ import { ThermalReceipt } from './ThermalReceipt';
 import { 
   captureReceiptAsBase64, 
   downloadBillImage, 
-  shareBillImage, 
+  shareBillImage,
   shareViaWhatsApp,
-  shareToTinyPrint
+  openTinyPrintApp
 } from '@/lib/generateBillImage';
 import { useToast } from '@/components/Toast';
 import { Check, Download, Share2, MessageCircle, Printer, X, Loader2 } from 'lucide-react';
@@ -118,15 +118,14 @@ export function BillSuccessModal({
      
      setIsTinyPrinting(true);
      try {
-       const success = await shareToTinyPrint(receiptRef.current, bill.invoiceNumber, shopName);
-       if (success) {
-         addToast('success', 'Bill sent to TinyPrint');
-       } else {
-         addToast('info', 'Bill downloaded. Open TinyPrint app to print.');
-       }
+       // Download the bill first
+       await downloadBillImage(receiptRef.current, bill.invoiceNumber);
+       // Open TinyPrint app
+       await openTinyPrintApp();
+       addToast('success', 'Bill downloaded. Open TinyPrint to print.');
      } catch (error) {
        console.error('TinyPrint error:', error);
-       addToast('error', 'Failed to share to TinyPrint');
+       addToast('error', 'Failed to open TinyPrint');
      } finally {
        setIsTinyPrinting(false);
      }

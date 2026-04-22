@@ -34,6 +34,7 @@ export function BillSuccessModal({
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isWhatsapping, setIsWhatsapping] = useState(false);
+  const [isTinyPrint, setIsTinyPrint] = useState(false);
 
   const { addToast } = useToast();
 
@@ -122,7 +123,7 @@ export function BillSuccessModal({
   const handleTinyPrint = async () => {
     if (!receiptRef.current) return;
     
-    setIsTinyPrinting(true);
+    setIsTinyPrint(true);
     try {
       await shareToTinyPrint(receiptRef.current, bill.invoiceNumber, shopName);
       addToast('success', 'Bill sent to TinyPrint');
@@ -130,13 +131,13 @@ export function BillSuccessModal({
       console.error('TinyPrint error:', error);
       addToast('error', 'Failed to share to TinyPrint');
     } finally {
-      setIsTinyPrinting(false);
+      setIsTinyPrint(false);
     }
   };
 
   if (!isOpen) return null;
 
-  const isAnyLoading = isDownloading || isSharing || isWhatsapping || isTinyPrinting;
+  const isAnyLoading = isDownloading || isSharing || isWhatsapping || isTinyPrint;
 
   return (
     <>

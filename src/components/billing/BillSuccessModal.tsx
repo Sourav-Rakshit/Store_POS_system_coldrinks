@@ -112,24 +112,6 @@ export function BillSuccessModal({
     }
   };
 
-   const handleTinyPrint = async () => {
-     if (!receiptRef.current) return;
-     
-     setIsTinyPrinting(true);
-     try {
-       // Download the bill first
-       await downloadBillImage(receiptRef.current, bill.invoiceNumber);
-       // Open TinyPrint app
-       await openTinyPrintApp();
-       addToast('success', 'Bill downloaded. Open TinyPrint to print.');
-     } catch (error) {
-       console.error('TinyPrint error:', error);
-       addToast('error', 'Failed to open TinyPrint');
-     } finally {
-       setIsTinyPrinting(false);
-     }
-   };
-
   const handleNewBill = () => {
     onNewBill();
     onClose();
@@ -261,7 +243,7 @@ export function BillSuccessModal({
               </button>
             </div>
 
-            {/* Print Button */}
+              {/* Print Button */}
             <button
               onClick={() => window.print()}
               disabled={isAnyLoading}

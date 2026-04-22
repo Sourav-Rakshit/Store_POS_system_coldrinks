@@ -81,7 +81,7 @@ export default function ProductsPage() {
     setFormData({
       name: '',
       brand: '',
-      category: 'Sodas',
+      category: 'Soft Drinks',
       icon: null,
       sizes: [{ id: crypto.randomUUID(), name: '500ml', pricePerBottle: 0, pricePerCarton: 0, bottlesPerCarton: 12 }],
     });

@@ -362,10 +362,7 @@ width: '400px',
              <span>Due Amount</span>
              <span>₹{dueAmount.toFixed(2)}</span>
            </div>
-         )}
-
-
-         )}
+)}
 
         {/* Final Amount */}
        {showReturnSection && (

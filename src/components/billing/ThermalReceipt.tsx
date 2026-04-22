@@ -200,35 +200,37 @@ export function ThermalReceipt({
       {/* Items Header */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 30px 50px 55px',
-        gap: '4px',
-        fontSize: '10px',
+        gridTemplateColumns: '120px 25px 30px 30px',
+        gap: '1px',
+        fontSize: '8px',
         fontWeight: 'bold',
         borderBottom: '1px dashed #000',
-        paddingBottom: '4px',
-        marginBottom: '4px'
+        paddingBottom: '2px',
+        marginBottom: '2px'
       }}>
-        <span>Item</span>
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Item</span>
         <span style={{ textAlign: 'center' }}>Qty</span>
         <span style={{ textAlign: 'right' }}>Rate</span>
         <span style={{ textAlign: 'right' }}>Amount</span>
       </div>
 
-      {/* Items */}
+      {/* Items - each on one line */}
       {billItems.map((item, index) => (
         <div
           key={index}
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 30px 50px 55px',
-            gap: '4px',
-            fontSize: '10px',
-            marginBottom: '3px',
-            alignItems: 'start'
+            gridTemplateColumns: '120px 25px 30px 30px',
+            gap: '1px',
+            fontSize: '8px',
+            marginBottom: '1px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
           }}
         >
-          <span>{item.productName} {item.sizeName}</span>
-          <span style={{ textAlign: 'center' }}>{formatQty(item.quantity, item.packaging)}</span>
+          <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.productName}</span>
+          <span style={{ textAlign: 'center' }}>{item.quantity}</span>
           <span style={{ textAlign: 'right' }}>₹{Number(item.unitPrice).toFixed(2)}</span>
           <span style={{ textAlign: 'right' }}>₹{Number(item.totalPrice).toFixed(2)}</span>
         </div>
@@ -384,15 +386,32 @@ export function ThermalReceipt({
        )}
       </div>
 
-      {/* Amount in Words */}
-      <div style={{
-        marginTop: '8px',
-        fontSize: '10px',
-        paddingTop: '6px',
-        borderTop: '1px dashed #000'
-      }}>
-        <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(dueAmount)} Only
-      </div>
+{/* Amount in Words */}
+       <div style={{
+         marginTop: '8px',
+         fontSize: '10px',
+         paddingTop: '6px',
+         borderTop: '1px dashed #000'
+       }}>
+         <span style={{ fontWeight: 'bold' }}>Amount in Words:</span> {numberToWords(dueAmount)} Only
+       </div>
+
+       {/* Change Given (for Cash payments with excess) */}
+       {bill.paymentMode === 'Cash' && Number(bill.cashReceived) > roundedTotal && (
+         <div style={{
+           display: 'flex',
+           justifyContent: 'space-between',
+           fontSize: '10px',
+           marginTop: '3px',
+           paddingTop: '3px',
+           borderTop: '1px dotted #ccc'
+         }}>
+           <span>Change Given</span>
+           <span style={{ fontFamily: '"Geist Mono", monospace' }}>
+             ₹{(roundedTotal - Number(bill.cashReceived))}
+           </span>
+         </div>
+       )}
 
       {/* Payment Method */}
       <div style={{

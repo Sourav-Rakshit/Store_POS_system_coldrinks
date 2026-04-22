@@ -75,6 +75,48 @@ export function canUseWebShare(): boolean {
 }
 
 /**
+ * Open TinyPrint app via Android Intent to print a bill
+ * Package: com.frogtosea.tinyPrint
+ */
+export function openTinyPrintApp(): void {
+  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+    try {
+      // Try to open TinyPrint app directly via intent URL scheme
+      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
+    } catch (e) {
+      console.log('TinyPrint app not installed, fallback to download');
+    }
+  }
+}
+
+/**
+ * Share bill image to TinyPrint app via Android Intent
+ * If app not installed or not Android, falls back to download
+ */
+export async function shareToTinyPrint(
+  element: HTMLElement,
+  invoiceNumber: string,
+  shopName: string
+): Promise<void> {
+  // Capture receipt first
+  const dataUrl = await captureReceiptAsBase64(element);
+
+  // On Android, try to open TinyPrint app directly via intent
+  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+    try {
+      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
+    } catch (e) {
+      // TinyPrint app not installed - download the image as fallback
+      console.log('TinyPrint app not installed, downloading bill image');
+      await downloadBillImage(element, invoiceNumber);
+    }
+  } else {
+    // Non-Android: download the image
+    await downloadBillImage(element, invoiceNumber);
+  }
+}
+
+/**
  * Share a receipt using Web Share API
  */
 export async function shareBillImage(
@@ -130,19 +172,6 @@ export function isMobileDevice(): boolean {
 }
 
 /**
- * Open TinyPrint app via Android Intent to print a bill
- * Package: com.frogtosea.tinyPrint
- */
-export async function openTinyPrintApp(): Promise<void> {
-  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
-    try {
-      // Try to open TinyPrint app directly
-      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
-    } catch (e) {
-      console.log('TinyPrint app not installed, fallback to download');
-}
-
-/**
  * Share via WhatsApp
  * Note: WhatsApp API cannot directly attach images, so we open WhatsApp with message and download the image
  */
@@ -169,9 +198,6 @@ export async function shareViaWhatsApp(
     throw error;
   }
 }
-}
-
-
 
 /**
  * Download a receipt as a PDF file

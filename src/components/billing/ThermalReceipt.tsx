@@ -125,12 +125,14 @@ export function ThermalReceipt({
   const showReturnSection = returnedItems.length > 0 || refundAmount > 0;
 
   return (
-    <div
+<div
       style={{
-width: '400px',
+        width: '54mm',
+        minHeight: '450px',
+        margin: '0 auto',
         backgroundColor: '#ffffff',
         fontFamily: '"Courier New", Courier, monospace',
-        fontSize: '12px',
+        fontSize: '14px',
         color: '#000000',
         padding: '10px',
         boxSizing: 'border-box',

@@ -310,27 +310,6 @@ export function BillReceipt({ bill, settings }: BillReceiptProps) {
         </div>
       )}
 
-      {/* Tax */}
-      {taxRate > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '8px',
-          }}
-        >
-          <span style={{ fontSize: '12px' }}>Tax ({taxRate}%)</span>
-          <span
-            style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '12px',
-            }}
-          >
-            {formatCurrency(Number(bill.subtotal) * (taxRate / 100))}
-          </span>
-        </div>
-      )}
-
       {/* Total */}
       <div
         style={{
@@ -433,48 +412,6 @@ export function BillReceipt({ bill, settings }: BillReceiptProps) {
             }}
           >
             {formatCurrency(Number(bill.totalAmount))}
-          </span>
-        </div>
-      )}
-
-      {/* Cash Received (only for Cash payments) */}
-      {bill.paymentMode === 'Cash' && bill.cashReceived && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '8px',
-          }}
-        >
-          <span style={{ fontSize: '12px' }}>Cash Received</span>
-          <span
-            style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '12px',
-            }}
-          >
-            {formatCurrency(Number(bill.cashReceived))}
-          </span>
-        </div>
-      )}
-
-      {/* Change Given (only for Cash payments) */}
-      {bill.paymentMode === 'Cash' && bill.changeGiven && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '16px',
-          }}
-        >
-          <span style={{ fontSize: '12px' }}>Change Given</span>
-          <span
-            style={{
-              fontFamily: '"Geist Mono", monospace',
-              fontSize: '12px',
-            }}
-          >
-            {formatCurrency(Number(bill.changeGiven))}
           </span>
         </div>
       )}

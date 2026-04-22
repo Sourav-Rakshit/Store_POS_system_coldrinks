@@ -136,16 +136,16 @@ export function BillReceipt({ bill, settings }: BillReceiptProps) {
                 )}
               </div>
               {/* Show type badge for VIP/Wholesale */}
-              {bill.customerType && (bill.customerType === 'vip' || bill.customerType === 'wholesale') && (
+              {bill.customerType && bill.customerType === 'wholesale' && (
                 <span
                   style={{
                     fontSize: '10px',
                     padding: '2px 8px',
                     borderRadius: '9999px',
                     fontWeight: 600,
-                    backgroundColor: bill.customerType === 'vip' ? '#fef3c7' : '#dbeafe',
-                    color: bill.customerType === 'vip' ? '#b45309' : '#1d4ed8',
-                    border: `1px solid ${bill.customerType === 'vip' ? '#fcd34d' : '#93c5fd'}`,
+                    backgroundColor: '#dbeafe',
+                    color: '#1d4ed8',
+                    border: `1px solid #93c5fd`,
                   }}
                 >
                   {CUSTOMER_TYPES[bill.customerType]?.label || bill.customerType.toUpperCase()}

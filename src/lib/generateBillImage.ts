@@ -2,6 +2,48 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 /**
+ * Open TinyPrint app via Android Intent to print a bill
+ * Package: com.frogtosea.tinyPrint
+ */
+export function openTinyPrintApp(): void {
+  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+    try {
+      // Try to open TinyPrint app directly via intent URL scheme
+      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
+    } catch (e) {
+      console.log('TinyPrint app not installed, fallback to download');
+    }
+  }
+}
+
+/**
+ * Share bill image to TinyPrint app via Android Intent
+ * If app not installed or not Android, falls back to download
+ */
+export async function shareToTinyPrint(
+  element: HTMLElement,
+  invoiceNumber: string,
+  shopName: string
+): Promise<void> {
+  // Capture receipt first
+  const dataUrl = await captureReceiptAsBase64(element);
+
+  // On Android, try to open TinyPrint app directly via intent
+  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
+    try {
+      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
+    } catch (e) {
+      // TinyPrint app not installed - download the image as fallback
+      console.log('TinyPrint app not installed, downloading bill image');
+      await downloadBillImage(element, invoiceNumber);
+    }
+  } else {
+    // Non-Android: download the image
+    await downloadBillImage(element, invoiceNumber);
+  }
+}
+
+/**
  * Capture a DOM element as a base64 JPG image
  */
 export async function captureReceiptAsBase64(element: HTMLElement): Promise<string> {
@@ -72,48 +114,6 @@ function getFilename(invoiceNumber: string): string {
 export function canUseWebShare(): boolean {
   if (typeof navigator === 'undefined') return false;
   return typeof navigator.share === 'function' && typeof navigator.canShare === 'function';
-}
-
-/**
- * Open TinyPrint app via Android Intent to print a bill
- * Package: com.frogtosea.tinyPrint
- */
-export function openTinyPrintApp(): void {
-  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
-    try {
-      // Try to open TinyPrint app directly via intent URL scheme
-      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
-    } catch (e) {
-      console.log('TinyPrint app not installed, fallback to download');
-    }
-  }
-}
-
-/**
- * Share bill image to TinyPrint app via Android Intent
- * If app not installed or not Android, falls back to download
- */
-export async function shareToTinyPrint(
-  element: HTMLElement,
-  invoiceNumber: string,
-  shopName: string
-): Promise<void> {
-  // Capture receipt first
-  const dataUrl = await captureReceiptAsBase64(element);
-
-  // On Android, try to open TinyPrint app directly via intent
-  if (typeof window !== 'undefined' && /Android/i.test(navigator.userAgent)) {
-    try {
-      window.location.href = 'intent://#Intent;package=com.frogtosea.tinyPrint;action=android.intent.action.VIEW;end';
-    } catch (e) {
-      // TinyPrint app not installed - download the image as fallback
-      console.log('TinyPrint app not installed, downloading bill image');
-      await downloadBillImage(element, invoiceNumber);
-    }
-  } else {
-    // Non-Android: download the image
-    await downloadBillImage(element, invoiceNumber);
-  }
 }
 
 /**

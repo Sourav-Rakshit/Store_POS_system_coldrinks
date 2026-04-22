@@ -8,9 +8,9 @@ import {
   downloadBillImage, 
   shareBillImage, 
   shareViaWhatsApp,
-  shareToTinyPrint
+  shareToTinyPrint,
+  openTinyPrintApp
 } from '@/lib/generateBillImage';
-import { canUseWebShare } from '@/lib/generateBillImage';
 import { useToast } from '@/components/Toast';
 import { Check, Download, Share2, MessageCircle, Printer, X, Loader2 } from 'lucide-react';
 
@@ -262,18 +262,21 @@ export function BillSuccessModal({
             </div>
 
              {/* TinyPrint Button */}
-             <button
-               onClick={handleTinyPrint}
-               disabled={isAnyLoading}
-               className="w-full flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
-             >
-                {isTinyPrint ? (
+              <button
+                onClick={() => {
+                  openTinyPrintApp();
+                  handleTinyPrint();
+                }}
+                disabled={isAnyLoading}
+                className="w-full flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
+              >
+                {isTinyPrinting ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <Printer className="w-5 h-5" />
                 )}
-               Print
-             </button>
+                Print
+              </button>
 
             {/* New Bill - Ghost */}
             <button

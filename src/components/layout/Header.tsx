@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, IceCream, Menu, Settings } from 'lucide-react';
+import { Bell, Droplets, Menu, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { usePathname } from 'next/navigation';
@@ -52,7 +52,7 @@ export function Header() {
           {/* Tappable Logo */}
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="bg-primary p-2 rounded-lg text-white">
-              <IceCream className="w-5 h-5" />
+              <Droplets className="w-5 h-5" />
             </div>
             <h1 className="text-lg font-bold text-slate-900">
               {mounted ? shopName : 'Store'}

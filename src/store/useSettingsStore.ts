@@ -24,7 +24,7 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>()(
   (set, get) => ({
-      shopName: 'FrostyFlow',
+      shopName: 'Saikat Enterprise',
       ownerName: '',
       shopPhone: '',
       shopAddress: '',
@@ -38,7 +38,7 @@ export const useSettingsStore = create<SettingsState>()(
         try {
           const settings = await storage.getSettings();
           set({
-            shopName: settings.shopName || 'FrostyFlow',
+            shopName: settings.shopName || 'Saikat Enterprise',
             ownerName: settings.ownerName || '',
             shopPhone: settings.shopPhone || '',
             shopAddress: settings.shopAddress || '',
@@ -57,7 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
         try {
           const settings = await storage.getSettings(true); // Force fresh from Neon
           set({
-            shopName: settings.shopName || 'FrostyFlow',
+            shopName: settings.shopName || 'Saikat Enterprise',
             ownerName: settings.ownerName || '',
             shopPhone: settings.shopPhone || '',
             shopAddress: settings.shopAddress || '',

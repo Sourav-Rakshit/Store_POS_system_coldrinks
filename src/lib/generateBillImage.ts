@@ -1,6 +1,50 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+function resolveReceiptElement(element: HTMLElement): HTMLElement {
+  const receiptRoot = element.querySelector<HTMLElement>('[data-receipt-root="true"]');
+  return receiptRoot || element;
+}
+
+function createCaptureClone(target: HTMLElement): { container: HTMLDivElement; clone: HTMLElement } {
+  const width = Math.ceil(target.scrollWidth || target.offsetWidth || target.clientWidth || target.getBoundingClientRect().width || 400);
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.opacity = '0';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '-1';
+  container.style.background = '#ffffff';
+  container.style.padding = '0';
+  container.style.margin = '0';
+  container.style.width = `${width}px`;
+  container.style.minWidth = `${width}px`;
+  container.style.maxWidth = `${width}px`;
+  container.style.overflow = 'hidden';
+
+  const clone = target.cloneNode(true) as HTMLElement;
+  clone.style.width = `${width}px`;
+  clone.style.minWidth = `${width}px`;
+  clone.style.maxWidth = `${width}px`;
+  clone.style.margin = '0';
+
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  return { container, clone };
+}
+
+async function waitForReceiptRender(): Promise<void> {
+  if (typeof document !== 'undefined' && 'fonts' in document) {
+    await (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready;
+  }
+
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
 /**
  * Open TinyPrint app via Android Intent to print a bill
  * Package: com.frogtosea.tinyPrint
@@ -47,21 +91,39 @@ export async function shareToTinyPrint(
  * Capture a DOM element as a base64 JPG image
  */
 export async function captureReceiptAsBase64(element: HTMLElement): Promise<string> {
+  let captureContainer: HTMLDivElement | null = null;
   try {
+    const target = resolveReceiptElement(element);
+    await waitForReceiptRender();
+
+    const { container, clone } = createCaptureClone(target);
+    captureContainer = container;
+
+    await waitForReceiptRender();
+
+    const width = Math.ceil(clone.scrollWidth || clone.offsetWidth || clone.clientWidth || clone.getBoundingClientRect().width || 400);
+    const height = Math.ceil(clone.scrollHeight || clone.offsetHeight || clone.clientHeight || 1);
     const options = {
       scale: 2,
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
-      windowWidth: 400,
+      width,
+      height,
+      windowWidth: width,
+      windowHeight: height,
+      scrollX: 0,
+      scrollY: 0,
     } as any;
-    const canvas = await html2canvas(element, options);
+    const canvas = await html2canvas(clone, options);
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     return dataUrl;
   } catch (error) {
     console.error('Error capturing receipt:', error);
     throw error;
+  } finally {
+    captureContainer?.remove();
   }
 }
 
@@ -187,7 +249,7 @@ export async function shareViaWhatsApp(
 
     // Create WhatsApp message
     const message = encodeURIComponent(
-      `Your bill from ${shopName}.\nInvoice: ${invoiceNumber}\nTotal: ₹${totalAmount.toFixed(2)}`
+      `Your bill from ${shopName}.\nInvoice: ${invoiceNumber}\nTotal: â‚¹${totalAmount.toFixed(2)}`
     );
 
     // Open WhatsApp
@@ -210,17 +272,22 @@ export async function downloadBillPDF(
     const dataUrl = await captureReceiptAsBase64(element);
 
     // Create PDF with receipt dimensions (80mm thermal paper)
+    const preview = new Image();
+    preview.src = dataUrl;
+    await new Promise<void>((resolve, reject) => {
+      preview.onload = () => resolve();
+      preview.onerror = () => reject(new Error('Failed to measure receipt image'));
+    });
+
+    const pdfWidth = 80;
+    const pdfHeight = (preview.height * pdfWidth) / preview.width;
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: [80, 200], // 80mm width, variable height
+      format: [pdfWidth, pdfHeight],
     });
 
     // Add image to PDF
-    const imgProps = pdf.getImageProperties(dataUrl);
-    const pdfWidth = 80;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
     pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
 
     // Save PDF

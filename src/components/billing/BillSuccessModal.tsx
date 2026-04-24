@@ -141,19 +141,6 @@ export function BillSuccessModal({
 
   return (
     <>
-      {/* Off-screen receipt for html2canvas capture */}
-      <div 
-        ref={receiptRef}
-        style={{ 
-          position: 'absolute', 
-          left: '-9999px', 
-          top: '-9999px',
-          zIndex: -1 
-        }}
-      >
-        <ThermalReceipt bill={bill} settings={settings} />
-      </div>
-
       {/* Modal Overlay */}
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         {/* Modal Content */}
@@ -209,7 +196,7 @@ export function BillSuccessModal({
 
           {/* Receipt Preview */}
           <div className="p-4 border-b border-slate-100 bg-slate-50">
-            <div className="scale-50 origin-top -mx-16 -mb-8">
+            <div ref={receiptRef} className="scale-50 origin-top -mx-16 -mb-8">
               <ThermalReceipt bill={bill} settings={settings} />
             </div>
           </div>
@@ -290,8 +277,6 @@ export function BillSuccessModal({
           </div>
         </div>
       </div>
-
-
     </>
   );
 }

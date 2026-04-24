@@ -348,21 +348,6 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* Hidden receipt for html2canvas capture */}
-      {selectedBill && (
-        <div
-          ref={receiptRef}
-          style={{
-            position: 'absolute',
-            left: '-9999px',
-            top: '-9999px',
-            zIndex: -1
-          }}
-        >
-          <ThermalReceipt bill={selectedBill} settings={settingsRef.current} />
-        </div>
-      )}
-
       {/* Bill Detail Modal */}
       {selectedBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -382,7 +367,7 @@ export default function HistoryPage() {
             
             {/* Receipt Preview */}
             <div className="p-4 border-b border-slate-100 bg-slate-50">
-              <div className="scale-50 origin-top -mx-16 -mb-8">
+              <div ref={receiptRef} className="scale-50 origin-top -mx-16 -mb-8">
                 <ThermalReceipt bill={selectedBill} settings={settingsRef.current} />
               </div>
             </div>
@@ -449,4 +434,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-

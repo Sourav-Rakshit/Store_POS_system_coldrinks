@@ -50,7 +50,29 @@ export function ThermalReceipt({
     ? JSON.parse(bill.items)
     : bill.items || [];
 
-  const itemTotal = billItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
+  // ✅ Defensive field mapping (handle different db field names)
+  const mappedItems = billItems.map((item: any) => ({
+    productName: item.productName || item.name || item.product_name || '',
+    sizeName: item.sizeName || item.size_name || item.size || '',
+    quantity: Number(item.quantity) || 0,
+    unitPrice: Number(item.unitPrice) || 0,
+    totalPrice: Number(item.totalPrice) || 0,
+    packaging: item.packaging,
+    invoiceNumber: item.invoiceNumber,
+  }));
+
+  // ✅ Map returned items defensively too
+  const mappedReturnedItems = returnedItems.map((item: any) => ({
+    productName: item.productName || item.name || item.product_name || '',
+    sizeName: item.sizeName || item.size_name || item.size || '',
+    quantity: Number(item.quantity) || 0,
+    unitPrice: Number(item.unitPrice) || 0,
+    totalPrice: Number(item.totalPrice) || 0,
+    packaging: item.packaging,
+  }));
+
+  // Calculate totals
+  const itemTotal = mappedItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
   const roundOff = Math.round(itemTotal) - itemTotal;
   const roundedTotal = Math.round(itemTotal);
   const paidAmount = Number(bill.cashReceived) || 0;
@@ -80,6 +102,8 @@ export function ThermalReceipt({
     return 'UNPAID';
   };
 
+  const statusStamp = getStatusStamp();
+
   const getPaymentMethod = () => {
     switch (bill.paymentMode) {
       case 'Cash': return 'CASH';
@@ -90,14 +114,15 @@ export function ThermalReceipt({
     }
   };
 
-  const status = getStatusStamp();
-  const showReturnSection = returnedItems.length > 0 || refundAmount > 0;
+  const showReturnSection = mappedReturnedItems.length > 0 || refundAmount > 0;
 
   // ✅ Shared column definition — single source of truth
   const COL = '1fr 22px 42px 42px';
 
   return (
-    <div style={{
+    <div
+      data-receipt-root="true"
+      style={{
       width: '52mm',
       minHeight: '420px',
       margin: '0 auto',
@@ -105,7 +130,7 @@ export function ThermalReceipt({
       fontFamily: '"Courier New", Courier, monospace',
       fontSize: '9px',
       color: '#000000',
-      padding: '0',
+      padding: '0 0 60px 0',
       boxSizing: 'border-box',
     }}>
 
@@ -151,7 +176,7 @@ export function ThermalReceipt({
       </div>
 
       {/* ── CUSTOMER ── */}
-      <div style={{ padding: '4px 8px', borderBottom: '1px dashed #000' }}>
+      <div style={{ padding: '4px 8px 5px', borderBottom: '1px dashed #000' }}>
         <div style={{ fontSize: '8px', marginBottom: '2px' }}>
           <span style={{ fontWeight: 'bold' }}>Type:</span> {getCustomerType()}
           {bill.billType === 'order' && bill.deliveryDate && (
@@ -190,48 +215,33 @@ export function ThermalReceipt({
       </div>
 
       {/* ── ITEMS LIST ── */}
-      {billItems.map((item, index) => (
+      {mappedItems.map((item, index) => (
         <div key={index} style={{
           display: 'grid',
           gridTemplateColumns: COL,
           fontSize: '8px',
-          padding: '2px 4px',
+          padding: '3px 4px 3px',
           backgroundColor: index % 2 === 0 ? '#fafafa' : '#ffffff',
+          alignItems: 'start',
         }}>
-          {/* ✅ Two-line item: name on line 1, size on line 2 if present */}
-          <div style={{ paddingRight: '3px', lineHeight: '1.3' }}>
-            <div style={{
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}>
-              {item.productName}
+          <div style={{ paddingRight: '3px', lineHeight: '1.45', wordBreak: 'break-word' }}>
+            <div>
+              {[item.productName, item.sizeName].filter(Boolean).join(' ')}
             </div>
-            {item.sizeName && (
-              <div style={{
-                fontSize: '7px',
-                color: '#555',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}>
-                {item.sizeName}
-              </div>
-            )}
           </div>
-          <span style={{ textAlign: 'center', alignSelf: 'center' }}>
+          <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '2px' }}>
             {formatQty(item.quantity, item.packaging)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'center' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px' }}>
             ₹{Number(item.unitPrice).toFixed(2)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'center' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px' }}>
             ₹{Number(item.totalPrice).toFixed(2)}
           </span>
         </div>
       ))}
 
-      {/* ── RETURN ITEMS ── */}
+{/* ── RETURN ITEMS ── */}
       {showReturnSection && (
         <div style={{
           padding: '4px 8px',
@@ -242,23 +252,24 @@ export function ThermalReceipt({
           <div style={{ fontSize: '8px', fontWeight: 'bold', color: '#cc0000', marginBottom: '3px' }}>
             RETURNED ITEMS:
           </div>
-          {returnedItems.map((item, index) => (
+          {mappedReturnedItems.map((item, index) => (
             <div key={index} style={{
               display: 'grid',
               gridTemplateColumns: '1fr 22px 42px',
               fontSize: '7px',
               marginBottom: '2px',
               color: '#cc0000',
+              alignItems: 'start',
             }}>
               <span style={{
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '3px',
               }}>
                 {item.productName} {item.sizeName}
               </span>
-              <span style={{ textAlign: 'center' }}>
+              <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '1px' }}>
                 {formatQty(item.quantity, item.packaging)}
               </span>
-              <span style={{ textAlign: 'right' }}>
+              <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '1px' }}>
                 ₹{Number(item.totalPrice).toFixed(2)}
               </span>
             </div>
@@ -271,7 +282,7 @@ export function ThermalReceipt({
       )}
 
       {/* ── TOTALS ── */}
-      <div style={{ padding: '4px 8px', borderTop: '1px dashed #000' }}>
+      <div style={{ padding: '4px 8px 4px', borderTop: '1px dashed #000' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
           <span>Item Total</span>
           <span>₹{itemTotal.toFixed(2)}</span>
@@ -327,7 +338,7 @@ export function ThermalReceipt({
       </div>
 
       {/* ── AMOUNT IN WORDS ── */}
-      <div style={{ padding: '3px 8px', fontSize: '7.5px', borderTop: '1px dashed #000' }}>
+      <div style={{ padding: '4px 8px 4px', fontSize: '7.5px', lineHeight: '1.45', borderTop: '1px dashed #000' }}>
         {/* ✅ Fix: use Math.abs(roundedTotal) for words, handle paid/due correctly */}
         <span style={{ fontWeight: 'bold' }}>Amt in Words: </span>
         {numberToWords(Math.abs(dueAmount <= 0 ? roundedTotal : dueAmount))} Only
@@ -335,7 +346,7 @@ export function ThermalReceipt({
 
       {/* ── CHANGE GIVEN ── */}
       {bill.paymentMode === 'Cash' && changeGiven > 0 && (
-        <div style={{ padding: '3px 8px', fontSize: '8px', borderTop: '1px dotted #ccc' }}>
+        <div style={{ padding: '4px 8px 4px', fontSize: '8px', borderTop: '1px dotted #ccc' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Change Given</span>
             {/* ✅ Fix: was roundedTotal - cashReceived (negative), now cashReceived - roundedTotal */}
@@ -344,6 +355,22 @@ export function ThermalReceipt({
         </div>
       )}
 
+      {/* ── STATUS STAMP ── */}
+      <div style={{ textAlign: 'center', margin: '4px 8px 0', padding: '2px 0' }}>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 'bold',
+            color: statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545',
+            border: `2px solid ${statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545'}`,
+            padding: '3px 10px',
+            borderRadius: '3px',
+            display: 'inline-block',
+            letterSpacing: '2px',
+          }}>
+            {statusStamp}
+          </span>
+      </div>
+
       {/* ── PAYMENT METHOD ── */}
       <div style={{
         marginTop: '6px', padding: '4px 8px', fontSize: '8px',
@@ -351,24 +378,6 @@ export function ThermalReceipt({
       }}>
         <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentMethod()}
       </div>
-
-      {/* ── STATUS STAMP ── */}
-      {status && (
-        <div style={{ textAlign: 'center', margin: '6px 0', padding: '4px 0' }}>
-          <span style={{
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: status === 'PAID' ? '#28a745' : status === 'DUE' ? '#fd7e14' : '#dc3545',
-            border: `2px solid ${status === 'PAID' ? '#28a745' : status === 'DUE' ? '#fd7e14' : '#dc3545'}`,
-            padding: '3px 10px',
-            borderRadius: '3px',
-            display: 'inline-block',
-            letterSpacing: '2px',
-          }}>
-            {status}
-          </span>
-        </div>
-      )}
 
       {/* ── FOOTER ── */}
       <div style={{

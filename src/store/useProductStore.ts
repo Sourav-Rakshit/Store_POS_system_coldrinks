@@ -133,8 +133,13 @@ export const useProductStore = create<ProductState>()(
         
         return products.filter((product) => {
           // Filter by category
-          if (selectedCategory !== 'All' && product.category !== selectedCategory) {
-            return false;
+          if (selectedCategory !== 'All') {
+            const pCat = product.category.toLowerCase();
+            const sCat = selectedCategory.toLowerCase();
+            const match = pCat === sCat || 
+                         (sCat === 'soft drinks' && pCat === 'sodas') || 
+                         (sCat === 'sodas' && pCat === 'soft drinks');
+            if (!match) return false;
           }
           
           // Filter by search query

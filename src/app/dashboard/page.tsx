@@ -142,7 +142,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <Header />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
               <div className="skeleton h-4 w-24 mb-4 rounded"></div>
@@ -243,9 +243,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Desktop Chart - Hidden on mobile */}
+      {/* Weekly Sales Trend */}
       <div 
-        className="hidden lg:block bg-white p-6 rounded-xl border border-slate-200 shadow-sm animate-fade-in"
+        className="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm animate-fade-in"
         style={{ animationDelay: '500ms' }}
       >
         <div className="flex items-center justify-between mb-6">
@@ -254,7 +254,8 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-500">Revenue performance over last 7 days</p>
           </div>
         </div>
-        <div className="h-64">
+        <div className="overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0">
+          <div className="h-64 min-w-[560px] lg:min-w-0">
           {salesData && salesData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={250}>
@@ -294,11 +295,12 @@ export default function DashboardPage() {
               No sales data available
             </div>
           )}
+          </div>
         </div>
       </div>
 
       {/* Mobile Mini Stats - Visible only on mobile */}
-      <div className="lg:hidden overflow-x-auto pb-2 -mx-4 px-4">
+      <div className="hidden overflow-x-auto pb-2 -mx-4 px-4">
         <div className="flex gap-3">
           {salesData.map((day, i) => (
             <div key={i} className="flex-shrink-0 bg-white p-3 rounded-lg border border-slate-200 min-w-[80px]">

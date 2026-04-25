@@ -67,9 +67,9 @@ export async function POST(request: Request) {
       sizes.map((size: { name: string; pricePerBottle: number; pricePerCarton: number; bottlesPerCarton: number }) => ({
         productId: newProduct.id,
         sizeName: size.name,
-        pricePerBottle: size.pricePerBottle.toString(),
-        pricePerCarton: size.pricePerCarton.toString(),
-        bottlesPerCarton: size.bottlesPerCarton,
+        pricePerBottle: (size.pricePerBottle ?? 0).toString(),
+        pricePerCarton: (size.pricePerCarton ?? 0).toString(),
+        bottlesPerCarton: size.bottlesPerCarton || 0,
       }))
     ).returning();
     

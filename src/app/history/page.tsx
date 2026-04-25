@@ -199,94 +199,158 @@ export default function HistoryPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <header className="flex items-center gap-4">
-        {/* Back/Home buttons for mobile */}
-        <div className="flex gap-1 lg:hidden">
+      <header className="flex items-center justify-between lg:justify-start lg:gap-4 mb-2 lg:mb-0">
+        <div className="flex items-center gap-2 lg:gap-4">
+          {/* Mobile hamburger */}
           <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-slate-100 rounded-lg"
-            title="Go Back"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+              }
+            }}
+            className="p-2 -ml-2 hover:bg-slate-100 rounded-lg lg:hidden"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
           </button>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="p-2 hover:bg-slate-100 rounded-lg"
-            title="Go Home"
-          >
-            <Home className="w-5 h-5 text-slate-600" />
-          </button>
+
+          {/* Back/Home buttons for desktop */}
+          <div className="hidden lg:flex gap-1">
+            <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+            <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-slate-100 rounded-lg"><Home className="w-5 h-5 text-slate-600" /></button>
+          </div>
+
+          <div className="hidden lg:flex bg-primary/10 p-2 rounded-lg">
+            <Receipt className="w-6 h-6 text-primary" />
+          </div>
+
+          <div className="text-center lg:text-left">
+            <h1 className="text-lg lg:text-xl font-bold">Bill History</h1>
+            <p className="text-[11px] lg:text-sm text-slate-500 whitespace-nowrap">View all transaction records</p>
+          </div>
         </div>
-        <div className="bg-primary/10 p-2 rounded-lg">
-          <Receipt className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold">Bill History</h1>
-          <p className="text-sm text-slate-500">View all transaction records</p>
+
+        {/* Mobile Avatar placeholder */}
+        <div className="lg:hidden w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
       </header>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-slate-500 text-sm font-medium">Total Revenue</p>
-            <Receipt className="w-5 h-5 text-primary" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-2 lg:gap-4">
+        {/* Mobile Stat Card 1 / Desktop Stat Card 1 */}
+        <div className="bg-white lg:bg-slate-800 p-3 lg:p-6 rounded-xl lg:rounded-xl border border-slate-100 lg:border-primary/5 shadow-sm lg:shadow-sm">
+          <div className="flex items-center justify-between mb-1 lg:mb-2">
+            <p className="text-[#9ca3af] lg:text-slate-500 text-[11px] lg:text-sm font-medium">Total Revenue</p>
+            <Receipt className="hidden lg:block w-5 h-5 text-primary" />
           </div>
-          <p className="text-3xl font-bold text-primary">{formatCurrency(totalRevenue)}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            {totalBills > 0 ? `+${((totalRevenue / (totalRevenue - totalRevenue * 0.1)) * 10).toFixed(1)}%` : '0%'} from last period
+          <p className="text-[20px] lg:text-3xl font-bold text-[#111] lg:text-primary">{formatCurrency(totalRevenue)}</p>
+          <p className="text-[11px] lg:text-xs text-[#16a34a] lg:text-slate-400 mt-1 lg:mt-2 font-medium">
+            {totalBills > 0 ? `+${((totalRevenue / (totalRevenue - totalRevenue * 0.1)) * 10).toFixed(1)}%` : '0%'} <span className="hidden lg:inline">from last period</span><span className="lg:hidden">↑</span>
           </p>
         </div>
-        <div className="bg-white bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-slate-500 text-sm font-medium">Total Bills</p>
-            <Receipt className="w-5 h-5 text-primary" />
+
+        {/* Mobile Stat Card 2 / Desktop Stat Card 2 */}
+        <div className="bg-white lg:bg-slate-800 p-3 lg:p-6 rounded-xl lg:rounded-xl border border-slate-100 lg:border-primary/5 shadow-sm lg:shadow-sm">
+          <div className="flex items-center justify-between mb-1 lg:mb-2">
+            <p className="text-[#9ca3af] lg:text-slate-500 text-[11px] lg:text-sm font-medium">Total Bills</p>
+            <Receipt className="hidden lg:block w-5 h-5 text-primary" />
           </div>
-          <p className="text-3xl font-bold">{totalBills}</p>
-          <p className="text-xs text-slate-400 mt-2">
-            Average: {formatCurrency(averageBillValue)} per bill
+          <p className="text-[20px] lg:text-3xl font-bold text-[#111] lg:text-white">{totalBills}</p>
+          <p className="text-[11px] lg:text-xs text-[#9ca3af] lg:text-slate-400 mt-1 lg:mt-2 font-medium">
+            <span className="lg:hidden">₹{averageBillValue.toFixed(0)} avg/bill</span>
+            <span className="hidden lg:inline">Average: {formatCurrency(averageBillValue)} per bill</span>
           </p>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-3">
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 mb-2 lg:mb-0">
+        <div className="w-full lg:flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search customer name or bill ID..."
+              placeholder="Search customer or bill ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border-none rounded-lg py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary shadow-sm"
+              className="w-full bg-white border border-slate-200 lg:border-none rounded-lg py-2 lg:py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary shadow-sm"
             />
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-primary/5 text-sm font-medium hover:bg-slate-50 transition-colors">
+        <div className="flex gap-2 w-full lg:w-auto">
+          {/* Mobile fake date picker */}
+          <div className="flex-1 lg:hidden flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-500">
+            <Calendar className="w-4 h-4" />
+            <span>Select Date</span>
+          </div>
+          
+          <button className="hidden lg:flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-primary/5 text-sm font-medium hover:bg-slate-50 transition-colors">
             <Calendar className="w-4 h-4" />
             {dateFilter === 'all' && 'All Time'}
             {dateFilter === 'today' && 'Today'}
             {dateFilter === 'week' && 'Last 7 Days'}
             {dateFilter === 'month' && 'Last 30 Days'}
           </button>
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="bg-white px-4 py-2 rounded-lg border border-primary/5 text-sm font-medium"
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
-          </select>
+          
+          <div className="w-[120px] lg:w-auto">
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full bg-white px-3 lg:px-4 py-2 lg:py-2 h-[38px] lg:h-auto rounded-lg border border-slate-200 lg:border-primary/5 text-sm font-medium"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Bills Table */}
-      <div className="bg-white rounded-xl border border-primary/5 shadow-sm overflow-hidden">
+      {/* Mobile Card List */}
+      <div className="lg:hidden space-y-2">
+        {filteredBills.length > 0 ? (
+          filteredBills.map((bill) => {
+            const total = typeof bill.totalAmount === 'string' ? parseFloat(bill.totalAmount) : bill.totalAmount;
+            const paid = typeof bill.cashReceived === 'string' ? parseFloat(bill.cashReceived) : (bill.cashReceived || 0);
+            const status = paid >= total ? { text: 'PAID', bg: 'bg-[#dcfce7]', textC: 'text-[#16a34a]' } : paid > 0 ? { text: 'PARTIAL', bg: 'bg-[#fef3c7]', textC: 'text-[#d97706]' } : { text: 'DUE', bg: 'bg-[#fee2e2]', textC: 'text-[#dc2626]' };
+            
+            const pMode = bill.paymentMode || 'Cash';
+            const modeBg = pMode === 'Cash' ? 'bg-slate-100 text-slate-600' : pMode === 'UPI' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700';
+            
+            return (
+              <div 
+                key={bill.id} 
+                onClick={() => setSelectedBill(bill)}
+                className="bg-white border border-slate-100 rounded-[12px] p-3 mb-2"
+              >
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[13px] font-semibold">{bill.invoiceNumber}</span>
+                  <div className="flex gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${modeBg}`}>{pMode}</span>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${status.bg} ${status.textC}`}>{status.text}</span>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[14px] font-semibold text-slate-800">{bill.customerName || 'Walk-in Customer'}</span>
+                  <span className="text-[15px] font-bold text-[#16a34a]">{formatCurrency(total)}</span>
+                </div>
+                <div>
+                  <span className="text-[12px] text-[#9ca3af]">{formatDate(bill.createdAt)} • {new Date(bill.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-10 bg-white rounded-xl border border-slate-100 text-slate-400">
+            <Receipt className="w-10 h-10 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No bills found</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Bills Table */}
+      <div className="hidden lg:block bg-white rounded-xl border border-primary/5 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -350,81 +414,68 @@ export default function HistoryPage() {
 
       {/* Bill Detail Modal */}
       {selectedBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+        <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center bg-black/50 backdrop-blur-sm lg:p-4">
+          <div className="bg-white w-full lg:max-w-lg rounded-t-[20px] lg:rounded-2xl shadow-2xl overflow-hidden h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col">
+            <div className="p-4 lg:p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
               <div>
-                <h3 className="text-lg font-bold">Bill Details</h3>
-                <p className="text-sm text-slate-500">{selectedBill.invoiceNumber}</p>
+                <h3 className="text-[17px] font-semibold">Bill Details</h3>
+                <p className="text-[13px] text-slate-500">{selectedBill.invoiceNumber}</p>
               </div>
               <button
                 onClick={handleCloseModal}
-                className="text-slate-400 hover:text-slate-600"
+                className="p-2 lg:p-0 text-slate-400 hover:text-slate-600 bg-slate-50 lg:bg-transparent rounded-full"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 lg:w-5 lg:h-5" />
               </button>
             </div>
             
-            {/* Receipt Preview */}
-            <div className="p-4 border-b border-slate-100 bg-slate-50">
-              <div ref={receiptRef} className="scale-50 origin-top -mx-16 -mb-8">
-                <ThermalReceipt bill={selectedBill} settings={settingsRef.current} />
+            {/* Receipt Preview - Scrollable */}
+            <div className="p-4 bg-white lg:bg-slate-50 overflow-y-auto flex-1">
+              <div className="bg-[#f9fafb] lg:bg-transparent border border-slate-100 lg:border-none rounded-xl p-4 lg:p-0 lg:scale-50 lg:origin-top lg:-mx-16 lg:-mb-8 w-full max-h-[50vh] lg:max-h-none overflow-y-auto overflow-x-hidden touch-pan-y" style={{ touchAction: 'pinch-zoom' }}>
+                <p className="text-center text-xs text-slate-400 mb-2 lg:hidden font-medium">Pinch to zoom</p>
+                <div ref={receiptRef} className="w-full flex justify-center origin-top lg:origin-top lg:scale-100 transform min-w-[300px]">
+                  <ThermalReceipt bill={selectedBill} settings={settingsRef.current} />
+                </div>
               </div>
             </div>
 
-            <div className="p-6 space-y-3">
-              {/* Download JPG - Primary */}
+            {/* Action Buttons */}
+            <div className="p-4 lg:p-6 border-t border-slate-100 bg-white shrink-0 space-y-2.5 pb-8 lg:pb-6">
               <button
                 onClick={handleDownload}
                 disabled={isAnyLoading}
-                className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white py-3 px-4 rounded-xl font-bold transition-colors"
+                className="w-full h-[46px] flex items-center justify-center gap-2 bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#86efac] text-white rounded-[10px] font-semibold text-[14px] transition-colors"
               >
-                {isDownloading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Download className="w-5 h-5" />
-                )}
+                {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-4 h-4" />}
                 Download JPG
               </button>
 
-              {/* Share and WhatsApp Row */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Share */}
+              <div className="flex gap-2.5">
                 <button
                   onClick={handleShare}
                   disabled={isAnyLoading}
-                  className="flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
+                  className="flex-1 h-[46px] flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] font-semibold text-[14px] transition-colors"
                 >
-                  {isSharing ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Share2 className="w-5 h-5" />
-                  )}
+                  {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-4 h-4" />}
                   Share
                 </button>
 
-                {/* WhatsApp */}
                 <button
                   onClick={handleWhatsApp}
                   disabled={isAnyLoading}
-                  className="flex items-center justify-center gap-2 border-2 border-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-green-600 transition-colors"
+                  className="flex-1 h-[46px] flex items-center justify-center gap-2 bg-white border border-[#25d366] hover:bg-[#f0fdf4] disabled:opacity-50 text-[#25d366] rounded-[10px] font-semibold text-[14px] transition-colors"
                 >
-                  {isWhatsapping ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <MessageCircle className="w-5 h-5" />
-                  )}
+                  {isWhatsapping ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
                   WhatsApp
                 </button>
               </div>
 
-              {/* Print Button */}
               <button
                 onClick={() => handlePrint(selectedBill)}
                 disabled={isAnyLoading}
-                className="w-full flex items-center justify-center gap-2 border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed py-3 px-4 rounded-xl font-bold text-slate-700 transition-colors"
+                className="w-full h-[46px] flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] font-semibold text-[14px] transition-colors"
               >
-                <Printer className="w-5 h-5" />
+                <Printer className="w-4 h-4" />
                 Print
               </button>
             </div>

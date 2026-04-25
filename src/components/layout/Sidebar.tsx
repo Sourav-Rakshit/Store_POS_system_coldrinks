@@ -12,7 +12,8 @@ import {
   Settings,
   IceCream,
   Users,
-  X
+  X,
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -20,7 +21,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/billing', label: 'Billing', icon: Receipt },
-  { href: '/orders', label: 'Orders', icon: Package },
+  { href: '/orders', label: 'Orders', icon: ClipboardList },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/inventory', label: 'Inventory', icon: ShoppingCart },
   { href: '/customers', label: 'Customers', icon: Users },
@@ -56,14 +57,14 @@ export function Sidebar() {
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-[60]"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <aside className={cn(
-        "lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 p-4 transform transition-transform duration-200 ease-in-out",
+        "lg:hidden fixed inset-y-0 left-0 z-[70] w-[min(18rem,86vw)] bg-white border-r border-slate-200 p-4 transform transition-transform duration-200 ease-in-out shadow-xl",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Close Button */}
@@ -162,4 +163,3 @@ export function Sidebar() {
     </>
   );
 }
-

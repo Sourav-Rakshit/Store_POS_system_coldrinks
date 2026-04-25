@@ -64,9 +64,9 @@ export async function PUT(
           const existingSize = existingSizes[i];
           await db.update(productSizes).set({
             sizeName: sizeData.name,
-            pricePerBottle: sizeData.pricePerBottle.toString(),
-            pricePerCarton: sizeData.pricePerCarton.toString(),
-            bottlesPerCarton: sizeData.bottlesPerCarton,
+            pricePerBottle: (sizeData.pricePerBottle ?? 0).toString(),
+            pricePerCarton: (sizeData.pricePerCarton ?? 0).toString(),
+            bottlesPerCarton: sizeData.bottlesPerCarton || 0,
           }).where(
             eq(productSizes.id, existingSize.id)
           );
@@ -75,9 +75,9 @@ export async function PUT(
           await db.insert(productSizes).values({
             productId: id,
             sizeName: sizeData.name,
-            pricePerBottle: sizeData.pricePerBottle.toString(),
-            pricePerCarton: sizeData.pricePerCarton.toString(),
-            bottlesPerCarton: sizeData.bottlesPerCarton,
+            pricePerBottle: (sizeData.pricePerBottle ?? 0).toString(),
+            pricePerCarton: (sizeData.pricePerCarton ?? 0).toString(),
+            bottlesPerCarton: sizeData.bottlesPerCarton || 0,
           });
         }
       }

@@ -7,17 +7,21 @@ import { useInventoryStore } from '@/store/useInventoryStore';
 import { useToast } from '@/components/Toast';
 import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { formatCurrency } from '@/lib/utils';
-import { Search, Plus, Edit, Trash2, Package, ImagePlus, Coffee, Droplets, Zap, Droplet, Beer, Home, LayoutDashboard } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Package, Menu } from 'lucide-react';
 import { Product, ProductCategory, ProductSize } from '@/types';
 
-const iconOptions = [
-  { name: 'None', icon: null },
-  { name: 'Coffee', icon: Coffee },
-  { name: 'Droplets', icon: Droplets },
-  { name: 'Zap', icon: Zap },
-  { name: 'Droplet', icon: Droplet },
-  { name: 'Beer', icon: Beer },
+const PRODUCT_ICONS = [
+  { name: 'Cola', emoji: '🥤' },
+  { name: 'Lemon', emoji: '🍋' },
+  { name: 'Juice', emoji: '🧃' },
+  { name: 'Water', emoji: '💧' },
+  { name: 'Energy', emoji: '⚡' },
+  { name: 'Soda', emoji: '🫚' },
+  { name: 'Orange', emoji: '🍊' },
+  { name: 'Other', emoji: '📦' },
 ];
+
+const PRODUCT_SIZES = ['250ml', '400ml', '600ml', '750ml', '1L', '1.2L', '2.25L'];
 
 const categories: ProductCategory[] = ['All', 'Soft Drinks', 'Juices', 'Energy Drinks', 'Water', 'Others'];
 
@@ -47,7 +51,7 @@ export default function ProductsPage() {
   const [formData, setFormData] = useState({
     name: '',
     brand: '',
-    category: 'Sodas' as ProductCategory,
+    category: 'Soft Drinks' as ProductCategory,
     icon: '' as string | null,
     sizes: [] as ProductSize[],
   });
@@ -83,7 +87,7 @@ export default function ProductsPage() {
       brand: '',
       category: 'Soft Drinks',
       icon: null,
-      sizes: [{ id: crypto.randomUUID(), name: '500ml', pricePerBottle: 0, pricePerCarton: 0, bottlesPerCarton: 12 }],
+      sizes: [{ id: crypto.randomUUID(), name: '250ml', pricePerBottle: 0, pricePerCarton: 0, bottlesPerCarton: 12 }],
     });
     setEditingProduct(null);
     setIsAddModalOpen(true);
@@ -143,19 +147,25 @@ export default function ProductsPage() {
       return;
     }
 
-    if (editingProduct) {
-      await updateProduct(editingProduct.id, formData);
-      addToast('success', 'Product updated');
-    } else {
-      await addProduct(formData);
-      addToast('success', 'Product added');
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, formData);
+        addToast('success', 'Product updated');
+      } else {
+        await addProduct(formData);
+        addToast('success', 'Product added');
+      }
+
+      setIsAddModalOpen(false);
+      setEditingProduct(null);
+
+      // Refresh both products and inventory after add/edit (in background)
+      refreshProducts().catch(console.error);
+      refreshInventory().catch(console.error);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      addToast('error', 'Failed to save product. Please try again.');
     }
-
-    // Refresh both products and inventory after add/edit
-    await Promise.all([refreshProducts(), refreshInventory()]);
-
-    setIsAddModalOpen(false);
-    setEditingProduct(null);
   };
 
   if (isLoading) {
@@ -175,35 +185,43 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-24 lg:pb-6">
       {/* Header */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {/* Back/Home buttons for mobile */}
-          <div className="flex gap-1 lg:hidden">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-slate-100 rounded-lg"
-              title="Go Back"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-            </button>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="p-2 hover:bg-slate-100 rounded-lg"
-              title="Go Home"
-            >
-              <Home className="w-5 h-5 text-slate-600" />
-            </button>
+      <header className="mb-2 md:mb-0 md:flex md:items-start md:justify-between md:gap-3">
+        <div className="flex items-center justify-between mb-1 md:mb-0 md:flex-none">
+          {/* Hamburger menu for mobile */}
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+              }
+            }}
+            className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg md:hidden"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
+          <div className="flex-1 text-center md:text-left md:flex md:items-center md:gap-3 md:min-w-0">
+            <h1 className="text-xl md:text-2xl md:text-3xl font-bold leading-tight">
+              Products
+            </h1>
+            <p className="hidden md:block text-slate-500 text-sm">Manage your cold drink products and pricing.</p>
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Products</h1>
-            <p className="text-slate-500 text-sm">Manage your cold drink products and pricing.</p>
-          </div>
+
+          {/* Mobile Avatar (using fixed initial or settings link) */}
+          <button
+            onClick={() => router.push('/settings')}
+            className="size-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm hover:bg-primary/20 transition-colors shrink-0 md:hidden"
+          >
+            A
+          </button>
         </div>
+        <p className="text-xs text-slate-500 leading-snug text-center w-full truncate md:hidden">Manage your cold drink products and pricing</p>
+        
+        {/* Desktop Add Button */}
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm"
+          className="hidden md:flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-colors shadow-sm"
         >
           <Plus className="w-5 h-5" />
           Add Product
@@ -225,12 +243,15 @@ export default function ProductsPage() {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div 
+        className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar whitespace-nowrap"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         {categories.map((category) => (
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex-shrink-0 px-[14px] py-[6px] rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
               selectedCategory === category
                 ? 'bg-primary text-white'
                 : 'bg-white bg-slate-800 border border-slate-200 border-slate-700 text-slate-600 text-slate-300 hover:border-primary'
@@ -241,64 +262,75 @@ export default function ProductsPage() {
         ))}
       </div>
 
+      {/* Mobile Add Button */}
+      <button
+        onClick={handleOpenAddModal}
+        className="md:hidden w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-full font-semibold transition-colors shadow-sm h-[44px] text-[14px] mt-2 mb-4"
+      >
+        <Plus className="w-5 h-5" />
+        Add Product
+      </button>
+
       {/* Products List */}
       <div className="grid gap-4">
         {filteredProducts.length > 0 ? (
           filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="bg-white bg-slate-800 border border-slate-200 border-slate-700 rounded-xl p-4 flex items-start sm:items-center gap-5 hover:shadow-md transition-shadow"
+              className="bg-white border border-slate-200 rounded-[12px] md:rounded-xl p-[12px] md:p-4 flex flex-row items-start md:items-center gap-3 md:gap-5 hover:shadow-md transition-shadow overflow-hidden"
             >
               {/* Product Icon */}
               <div
-                className="w-20 h-20 rounded-lg bg-slate-100 bg-slate-700 flex-shrink-0 flex items-center justify-center"
+                className="w-[48px] h-[48px] md:w-20 md:h-20 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center"
               >
                 {product.icon && (() => {
-                  const IconComponent = iconOptions.find(i => i.name === product.icon)?.icon;
-                  return IconComponent ? <IconComponent className="w-8 h-8 text-slate-400" /> : <Package className="w-8 h-8 text-slate-400" />;
+                  const iconObj = PRODUCT_ICONS.find(i => i.name === product.icon);
+                  return iconObj ? <span className="text-[24px] md:text-[32px]">{iconObj.emoji}</span> : <Package className="w-[24px] h-[24px] md:w-8 md:h-8 text-slate-400" />;
                 })()}
                 {!product.icon && (
-                  <Package className="w-8 h-8 text-slate-400" />
+                  <Package className="w-[24px] h-[24px] md:w-8 md:h-8 text-slate-400" />
                 )}
               </div>
 
               {/* Product Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="text-lg font-bold truncate">{product.name}</h3>
-                  <div className="flex gap-1">
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex items-start justify-between gap-2 mb-0.5 md:mb-1">
+                  <h3 className="text-[15px] md:text-lg font-semibold md:font-bold truncate">{product.name}</h3>
+                  <div className="flex gap-1 shrink-0 -mt-1 md:mt-0">
                     <button
                       onClick={() => handleOpenEditModal(product)}
-                      className="p-2 text-slate-400 hover:text-primary transition-colors"
+                      className="p-1 md:p-2 text-slate-400 hover:text-primary transition-colors"
                     >
-                      <Edit className="w-5 h-5" />
+                      <Edit className="w-[16px] h-[16px] md:w-5 md:h-5" style={{ color: '#2563eb' }} />
                     </button>
                     <button
                       onClick={() => handleDeleteProduct(product.id)}
-                      className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                      className="p-1 md:p-2 text-slate-400 hover:text-red-500 transition-colors"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-[16px] h-[16px] md:w-5 md:h-5" style={{ color: '#dc2626' }} />
                     </button>
                   </div>
                 </div>
-                <p className="text-sm text-slate-500 text-slate-400 mb-2">
+                <p className="text-[12px] md:text-sm text-slate-500 mb-0.5 md:mb-2 truncate">
                   Brand: <span className="font-medium">{product.brand}</span>
                 </p>
-                <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Available Sizes</span>
-                    <span className="text-sm text-slate-600 text-slate-300">
+                <div className="flex flex-col md:flex-row md:flex-wrap items-start md:gap-y-3 md:gap-x-6 min-w-0 space-y-0.5 md:space-y-0">
+                  <div className="flex flex-col md:block truncate w-full">
+                    <span className="hidden md:inline text-[10px] uppercase tracking-wider text-slate-400 font-bold md:mb-1">Available Sizes </span>
+                    <span className="md:hidden text-[12px] text-slate-500">Sizes: </span>
+                    <span className="text-[12px] md:text-sm text-slate-600 truncate">
                       {product.sizes.map(s => s.name).join(', ')}
                     </span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Pricing</span>
-                    <div className="flex gap-3 text-sm font-medium">
-                      <span className="text-slate-700 text-slate-200">
-                        Bottle: <span className="text-primary">₹{product.sizes[0]?.pricePerBottle}</span>
+                  <div className="hidden md:flex flex-col md:block truncate w-full">
+                    <span className="hidden md:inline text-[10px] uppercase tracking-wider text-slate-400 font-bold md:mb-1">Pricing </span>
+                    <div className="flex flex-row md:flex-row gap-1.5 md:gap-3 text-[12px] md:text-sm font-medium text-slate-500 md:text-slate-700 truncate">
+                      <span className="md:text-slate-700">
+                        Bottle <span className="md:text-primary">₹{product.sizes[0]?.pricePerBottle || 0}</span>
                       </span>
-                      <span className="text-slate-700 text-slate-200">
-                        Carton: <span className="text-primary">₹{product.sizes[0]?.pricePerCarton}</span>
+                      <span>•</span>
+                      <span className="md:text-slate-700">
+                        Carton <span className="md:text-primary">₹{product.sizes[0]?.pricePerCarton || 0}</span>
                       </span>
                     </div>
                   </div>
@@ -322,44 +354,43 @@ export default function ProductsPage() {
 
       {/* Add/Edit Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-              <h2 className="text-lg font-semibold text-slate-900">
+        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4">
+          <div className="bg-white w-full max-w-lg rounded-t-[20px] md:rounded-2xl pt-[20px] px-[16px] pb-[32px] md:p-0 shadow-2xl max-h-[90vh] flex flex-col mt-auto md:mt-0">
+            {/* Drag Handle (Mobile) */}
+            <div className="w-[40px] h-[4px] bg-[#e5e7eb] rounded-sm mx-auto mb-4 md:hidden" />
+            
+            <div className="md:p-6 md:border-b md:border-slate-100 flex justify-between items-center flex-shrink-0 mb-[14px] md:mb-0">
+              <h2 className="text-[17px] font-semibold md:text-lg md:font-semibold text-slate-900">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
               </h2>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-1 transition-colors"
+                className="text-[20px] text-[#6b7280] md:text-slate-400 md:hover:text-slate-600 md:hover:bg-slate-100 md:rounded-lg p-1 transition-colors"
               >
                 ✕
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+            <form onSubmit={handleSubmit} className="md:p-6 space-y-5 overflow-y-auto flex-1">
               {/* Icon Selection */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Select Icon</label>
-                <div className="flex flex-wrap gap-3">
-                  {iconOptions.map((option) => {
-                    const IconComponent = option.icon;
+                <label className="block text-[10px] md:text-xs font-semibold uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-500 mb-[6px] md:mb-3">Select Icon</label>
+                <div className="grid grid-cols-4 md:flex md:flex-wrap gap-[8px] md:gap-3">
+                  {PRODUCT_ICONS.map((option) => {
                     const isSelected = formData.icon === option.name;
                     return (
                       <button
                         key={option.name}
                         type="button"
-                        onClick={() => handleIconChange(option.name === 'None' ? null : option.name)}
-                        className={`w-14 h-14 rounded-xl border-2 flex items-center justify-center transition-all ${
+                        onClick={() => handleIconChange(option.name === 'Other' ? null : option.name)}
+                        className={`w-full md:w-14 h-[52px] md:h-14 rounded-[12px] border-[1.5px] md:border-2 flex flex-col md:flex-row items-center justify-center transition-all ${
                           isSelected
-                            ? 'border-primary bg-primary/10'
-                            : 'border-slate-200 bg-slate-50 hover:border-primary/50'
+                            ? 'border-[#16a34a] bg-[#f0fdf4]'
+                            : 'border-[#e5e7eb] bg-white md:bg-slate-50 hover:border-primary/50'
                         }`}
                       >
-                        {IconComponent ? (
-                          <IconComponent className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-slate-400'}`} />
-                        ) : (
-                          <span className={`text-xs ${isSelected ? 'text-primary' : 'text-slate-400'}`}>None</span>
-                        )}
+                        <span className="text-[24px] leading-none mb-[2px] md:mb-0">{option.emoji}</span>
+                        <span className="text-[9px] md:hidden text-[#6b7280] leading-none">{option.name}</span>
                       </button>
                     );
                   })}
@@ -367,26 +398,26 @@ export default function ProductsPage() {
               </div>
 
               {/* Name and Brand */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-[10px] md:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Product Name</label>
+                  <label className="block text-[10px] md:text-xs font-semibold uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-500 mb-[6px] md:mb-1.5">Product Name</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                    placeholder="e.g., Coca-Cola"
+                    className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-base text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    placeholder="Product name"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Brand</label>
+                  <label className="block text-[10px] md:text-xs font-semibold uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-500 mb-[6px] md:mb-1.5">Brand</label>
                   <input
                     type="text"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                    placeholder="e.g., Coca-Cola Co."
+                    className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-base text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    placeholder="Brand name"
                     required
                   />
                 </div>
@@ -394,11 +425,11 @@ export default function ProductsPage() {
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category</label>
+                <label className="block text-[10px] md:text-xs font-semibold uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-500 mb-[6px] md:mb-1.5">Category</label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value as ProductCategory })}
-                  className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-base text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                 >
                   {categories.filter(c => c !== 'All').map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -409,11 +440,11 @@ export default function ProductsPage() {
               {/* Sizes */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sizes & Pricing</label>
+                  <label className="block text-[10px] md:text-xs font-semibold uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-500">Sizes & Pricing</label>
                   <button
                     type="button"
                     onClick={handleAddSize}
-                    className="text-primary text-sm font-medium hover:underline"
+                    className="text-[#16a34a] md:text-primary text-[13px] md:text-sm font-medium md:hover:underline"
                   >
                     + Add Size
                   </button>
@@ -422,16 +453,16 @@ export default function ProductsPage() {
                   {formData.sizes.map((size, index) => (
                     <div key={size.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                       {/* Quick select chips */}
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {['250ml', '330ml', '500ml', '600ml', '1L', '1.25L', '1.5L', '2L', '2.25L'].map((preset) => (
+                      <div className="flex flex-wrap gap-[8px] md:gap-1.5 mb-4">
+                        {PRODUCT_SIZES.map((preset) => (
                           <button
                             key={preset}
                             type="button"
                             onClick={() => handleSizeChange(index, 'name', preset)}
-                            className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
+                            className={`px-[14px] md:px-3 py-[6px] md:py-1 text-[13px] md:text-xs font-medium rounded-full transition-all ${
                               size.name === preset
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-slate-100 text-slate-600 border border-slate-200 hover:border-primary hover:text-primary'
+                                ? 'bg-[#16a34a] md:bg-primary text-white border-[#16a34a] md:border-primary'
+                                : 'bg-white md:bg-slate-100 text-[#374151] md:text-slate-600 border-[1.5px] border-[#e5e7eb] md:border md:border-slate-200 hover:border-[#16a34a] md:hover:border-primary md:hover:text-primary'
                             }`}
                           >
                             {preset}
@@ -439,47 +470,47 @@ export default function ProductsPage() {
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] md:gap-3">
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Size</label>
+                          <label className="block text-[10px] uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-400 font-bold mb-[6px] md:mb-1">Size</label>
                           <input
                             type="text"
                             value={size.name}
                             onChange={(e) => handleSizeChange(index, 'name', e.target.value)}
-                            className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                             placeholder="500ml"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Price/Bottle ₹</label>
+                          <label className="block text-[10px] uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-400 font-bold mb-[6px] md:mb-1">Price/Bottle ₹</label>
                           <input
                             type="number"
-                            value={size.pricePerBottle}
+                            value={size.pricePerBottle || ''}
                             onChange={(e) => handleSizeChange(index, 'pricePerBottle', Number(e.target.value))}
-                            className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                             placeholder="20"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Price/Carton ₹</label>
+                          <label className="block text-[10px] uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-400 font-bold mb-[6px] md:mb-1">Price/Carton ₹</label>
                           <input
                             type="number"
-                            value={size.pricePerCarton}
+                            value={size.pricePerCarton || ''}
                             onChange={(e) => handleSizeChange(index, 'pricePerCarton', Number(e.target.value))}
-                            className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                             placeholder="220"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">Bottles/Carton</label>
+                          <label className="block text-[10px] uppercase tracking-[0.05em] md:tracking-wider text-[#9ca3af] md:text-slate-400 font-bold mb-[6px] md:mb-1">Bottles/Carton</label>
                           <input
                             type="number"
-                            value={size.bottlesPerCarton}
+                            value={size.bottlesPerCarton || ''}
                             onChange={(e) => handleSizeChange(index, 'bottlesPerCarton', Number(e.target.value))}
-                            className="w-full h-11 px-3 rounded-lg border border-slate-200 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                            className="w-full h-[44px] md:h-11 px-[12px] md:px-3 rounded-[10px] md:rounded-lg border-[1.5px] md:border border-[#e5e7eb] md:border-slate-200 bg-white text-[14px] md:text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                             placeholder="12"
                             required
                           />
@@ -502,18 +533,18 @@ export default function ProductsPage() {
             </form>
 
             {/* Actions - Sticky Footer */}
-            <div className="p-6 bg-white border-t border-slate-100 flex justify-end gap-3 flex-shrink-0">
+            <div className="sticky bottom-0 bg-white border-t border-slate-100 md:relative md:bg-transparent md:border-t md:border-slate-100 p-[12px_0] md:p-6 flex justify-between md:justify-end gap-[10px] md:gap-3 flex-shrink-0 z-10 mt-4 md:mt-0">
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="px-5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-50 rounded-lg transition-colors"
+                className="flex-1 md:flex-none h-[46px] md:h-auto md:px-5 md:py-2.5 text-[15px] md:text-sm font-semibold md:font-medium text-[#374151] md:text-slate-600 border-[1.5px] border-[#e5e7eb] md:border md:border-slate-200 bg-white hover:bg-slate-50 rounded-[10px] md:rounded-lg transition-colors flex items-center justify-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 onClick={handleSubmit}
-                className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors"
+                className="flex-1 md:flex-none h-[46px] md:h-auto md:px-6 md:py-2.5 bg-[#16a34a] md:bg-primary text-white text-[15px] md:text-sm font-semibold rounded-[10px] md:rounded-lg shadow-md hover:bg-primary/90 transition-colors flex items-center justify-center"
               >
                 {editingProduct ? 'Update Product' : 'Save Product'}
               </button>
@@ -524,4 +555,3 @@ export default function ProductsPage() {
     </div>
   );
 }
-

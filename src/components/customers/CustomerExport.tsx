@@ -7,9 +7,10 @@ import { formatCurrency } from '@/lib/utils';
 
 interface CustomerExportProps {
   customers: any[];
+  iconOnly?: boolean;
 }
 
-export function CustomerExport({ customers }: CustomerExportProps) {
+export function CustomerExport({ customers, iconOnly }: CustomerExportProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
@@ -96,15 +97,19 @@ export function CustomerExport({ customers }: CustomerExportProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
-        className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+        className={`flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50 ${iconOnly ? 'w-10 h-10 px-0' : ''}`}
       >
         {isExporting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <Download className="w-4 h-4" />
         )}
-        Export
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        {!iconOnly && (
+          <>
+            Export
+            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </>
+        )}
       </button>
       
       {isOpen && (

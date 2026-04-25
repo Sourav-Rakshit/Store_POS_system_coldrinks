@@ -11,7 +11,7 @@ import { useToast } from '@/components/Toast';
 import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { validateStock } from '@/lib/validateStock';
 import { formatCurrency } from '@/lib/utils';
-import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home } from 'lucide-react';
+import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu } from 'lucide-react';
 import { Product, ProductSize, BillItem, StoreSettings, CustomerWithStats, PaymentMode } from '@/types';
 import { BillSuccessModal } from '@/components/billing/BillSuccessModal';
 import { CustomerSearchDropdown } from '@/components/customers/CustomerSearchDropdown';
@@ -50,10 +50,19 @@ export default function BillingPage() {
   
   // Search and product selection
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBillingCategory, setSelectedBillingCategory] = useState<string>('Soft Drinks');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
   const [packaging, setPackaging] = useState<'bottle' | 'carton'>('bottle');
   const [quantity, setQuantity] = useState(1);
+
+  // Mobile packaging modal state
+  const [packagingModal, setPackagingModal] = useState<{
+    product: Product;
+    size: ProductSize;
+  } | null>(null);
+  const [packagingQty, setPackagingQty] = useState(1);
+  const [packagingType, setPackagingType] = useState<'bottle' | 'carton'>('bottle');
   
   // Customer state
   const [customerName, setCustomerName] = useState('');
@@ -154,15 +163,29 @@ export default function BillingPage() {
     setDiscount(discountType, discountValue);
   }, [discountType, discountValue, setDiscount]);
 
-  // Filter products based on search
+  // Filter products based on search and category
   const filteredProducts = useMemo(() => {
-    if (!searchQuery) return products.slice(0, 50); // Show more products when no search
-    const query = searchQuery.toLowerCase();
-    return products.filter(p => 
-      p.name.toLowerCase().includes(query) || 
-      p.brand.toLowerCase().includes(query)
-    ).slice(0, 50);
-  }, [products, searchQuery]);
+    let result = products;
+    
+    if (selectedBillingCategory !== 'All') {
+      const selected = selectedBillingCategory.toLowerCase().trim();
+      result = result.filter(p => {
+        const cat = p.category?.toLowerCase().trim() || '';
+        if (cat === selected) return true;
+        if (selected === 'soft drinks' && ['sodas', 'soda', 'soft-drinks', 'softdrinks'].includes(cat)) return true;
+        return false;
+      });
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(query) || 
+        p.brand.toLowerCase().includes(query)
+      );
+    }
+    return result;
+  }, [products, searchQuery, selectedBillingCategory]);
 
   // Get stock for selected size
   const getStockForSize = (productId: string, sizeId: string) => {
@@ -179,7 +202,14 @@ export default function BillingPage() {
     return selectedSize.pricePerCarton;
   };
 
-  // Add item to bill
+  // Add item from mobile packaging modal
+  const handleSizeClickMobile = (product: Product, size: ProductSize) => {
+    setPackagingModal({ product, size });
+    setPackagingQty(1);
+    setPackagingType('bottle');
+  };
+
+  // Add item from configurator (desktop)
   const handleAddItem = () => {
     if (!selectedProduct || !selectedSize) return;
 
@@ -214,6 +244,13 @@ export default function BillingPage() {
   
   // For ORDER mode - advance calculation
   const remainingAmount = total - advanceAmount;
+
+  // Helper to format quantity display
+  const formatQty = (qty: number, packaging?: string) => {
+    if (packaging === 'carton') return `${qty}C`;
+    if (packaging === 'bottle') return `${qty}B`;
+    return `${qty}`;
+  };
 
   // Determine bill status based on payment mode
   const getBillStatus = () => {
@@ -465,43 +502,47 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 no-print">
+    <div className="max-w-6xl mx-auto space-y-0 lg:space-y-6 no-print pb-[90px] lg:pb-6 px-4 lg:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Back/Home buttons for mobile */}
-          <div className="flex gap-1 lg:hidden">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-slate-100 rounded-lg"
-              title="Go Back"
-            >
+      <div className="flex items-center justify-between gap-3 mb-2 lg:mb-0">
+        <div className="flex items-center gap-2 lg:gap-3 flex-1 lg:flex-none">
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+              }
+            }}
+            className="p-2 -ml-2 lg:ml-0 hover:bg-slate-100 rounded-lg lg:hidden"
+          >
+            <Menu className="w-6 h-6 text-slate-600" />
+          </button>
+          
+          <div className="hidden lg:flex gap-1">
+            <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-lg" title="Go Back">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
             </button>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="p-2 hover:bg-slate-100 rounded-lg"
-              title="Go Home"
-            >
+            <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-slate-100 rounded-lg" title="Go Home">
               <Home className="w-5 h-5 text-slate-600" />
             </button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">New Billing</h1>
-            <p className="text-slate-500 text-sm">Create a new bill</p>
+          
+          <div className="text-center lg:text-left flex-1 lg:flex-none">
+            <h1 className="text-lg lg:text-2xl font-bold whitespace-nowrap">New Billing</h1>
+            <p className="text-slate-500 text-[11px] lg:text-sm">Create a new bill</p>
           </div>
         </div>
+        
         <button
           onClick={() => router.push('/history')}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50"
+          className="flex items-center gap-2 p-2 lg:px-4 lg:py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 shrink-0"
         >
-          <Receipt className="w-4 h-4" />
-          History
+          <Receipt className="w-5 h-5 lg:w-4 lg:h-4" />
+          <span className="hidden lg:inline">History</span>
         </button>
       </div>
 
       {/* Mode Tabs: SALE / ORDER */}
-      <div className="bg-white rounded-xl border border-slate-200 p-1 flex">
+      <div className="bg-white rounded-xl border border-slate-200 p-1 flex mb-[10px] lg:mb-0 lg:p-1">
         <button
           onClick={() => setBillingMode('sale')}
           className={`flex-1 py-3 px-6 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
@@ -526,11 +567,11 @@ export default function BillingPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:gap-6">
         {/* Left Column - Product Selection */}
-        <div className="space-y-4">
+        <div className="space-y-0 lg:space-y-4 flex flex-col">
           {/* Customer Details */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200">
+          <div className="bg-white p-3 lg:p-4 rounded-xl border border-slate-200 mb-[10px] lg:mb-0">
             <h3 className="text-sm font-bold uppercase tracking-wider mb-3">Customer Details</h3>
             
             {selectedCustomer ? (
@@ -592,17 +633,9 @@ export default function BillingPage() {
           </div>
 
           {/* Product Search */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider">Add Items</h3>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                View All Products
-              </button>
-            </div>
-            <div className="relative mb-4">
+          <div className="bg-white p-3 lg:p-4 rounded-xl border border-slate-200 mb-[10px] lg:mb-0">
+            <h3 className="text-sm font-bold uppercase tracking-wider mb-3">Add Items</h3>
+            <div className="relative mb-3 lg:mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -613,6 +646,23 @@ export default function BillingPage() {
               />
             </div>
 
+            {/* Category Pills */}
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-2 lg:mb-4 hide-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+              {['Soft Drinks', 'Juices', 'Water', 'Energy Drinks', 'Others', 'All'].map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedBillingCategory(cat)}
+                  className={`flex-shrink-0 px-[14px] py-[5px] text-[12px] font-medium rounded-full transition-colors ${
+                    selectedBillingCategory === cat
+                      ? 'bg-[#16a34a] text-white'
+                      : 'bg-white border border-[#e5e7eb] text-[#374151]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
             {/* Search Results / All Products */}
             {filteredProducts.length > 0 && !selectedProduct && (
               <div className="space-y-2 mb-4">
@@ -620,29 +670,36 @@ export default function BillingPage() {
                   <div
                     key={product.id}
                     onClick={() => {
-                      setSelectedProduct(product);
-                      setSelectedSize(product.sizes[0] || null);
+                      if (window.innerWidth >= 1024) {
+                        setSelectedProduct(product);
+                        setSelectedSize(product.sizes[0] || null);
+                      }
                     }}
-                    className="w-full p-3 text-left bg-slate-50 rounded-lg hover:bg-primary/5 transition-colors cursor-pointer"
+                    className="w-full p-3 text-left bg-white lg:bg-slate-50 rounded-xl lg:rounded-lg border border-slate-100 lg:border-none hover:bg-primary/5 transition-colors lg:cursor-pointer"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h4 className="font-bold text-sm">{product.name}</h4>
-                        <p className="text-xs text-slate-500 mb-2">{product.brand}</p>
+                        <h4 className="font-semibold text-[14px]">{product.name}</h4>
+                        <p className="hidden lg:block text-xs text-slate-500 mb-2">{product.brand}</p>
                         {/* Size badges - click to add directly */}
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-[6px] mt-2 lg:mt-0">
                           {product.sizes.map(size => (
                             <button
                               key={size.id}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Show quick add popover with size and packaging options
-                                setSelectedProduct(product);
-                                setSelectedSize(size);
-                                setPackaging('bottle');
-                                setQuantity(1);
+                                if (window.innerWidth < 1024) {
+                                  // Mobile: Show packaging modal
+                                  handleSizeClickMobile(product, size);
+                                } else {
+                                  // Desktop: Open Configurator
+                                  setSelectedProduct(product);
+                                  setSelectedSize(size);
+                                  setPackaging('bottle');
+                                  setQuantity(1);
+                                }
                               }}
-                              className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white rounded-full px-2 py-0.5 text-xs font-bold transition-colors"
+                              className="bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0] lg:bg-primary/10 lg:text-primary lg:border-primary/20 lg:hover:bg-primary lg:hover:text-white rounded-full px-[10px] py-[5px] lg:px-2 lg:py-0.5 text-[11px] lg:text-xs font-bold transition-colors"
                             >
                               {size.name} • ₹{size.pricePerBottle}
                             </button>
@@ -734,64 +791,84 @@ export default function BillingPage() {
             <h3 className="text-sm font-bold uppercase tracking-wider mb-3">Bill Preview</h3>
             
             {/* Items */}
-            <div className="space-y-4 mb-4 max-h-64 overflow-auto">
+            <div className="space-y-3 mb-4 max-h-64 overflow-auto">
               {currentBill.items.length > 0 ? (
                 currentBill.items.map(item => (
-                  <div key={item.id} className="flex justify-between items-center">
+                  <div key={item.id} className="flex justify-between items-center bg-slate-50 lg:bg-transparent p-2 lg:p-0 rounded-lg lg:rounded-none">
                     <div className="flex-1">
-                      <h5 className="font-medium text-sm">{item.productName} ({item.sizeName})</h5>
-                      <p className="text-xs text-slate-500 italic">
-                        {item.quantity} x {item.packaging}
-                      </p>
+                      <h5 className="font-medium text-[13px] lg:text-sm">{item.productName} ({item.sizeName})</h5>
                     </div>
-                    <div className="text-right flex items-center gap-2">
-                      <p className="font-bold text-sm">{formatCurrency(item.totalPrice)}</p>
+                    
+                    <div className="flex items-center gap-3 lg:gap-2">
+                      {/* Compact Qty Controls (Mobile mainly, but fine for desktop too) */}
+                      <div className="flex items-center border border-slate-200 rounded overflow-hidden bg-white h-[24px]">
+                        <button
+                          onClick={() => {
+                            if (item.quantity > 1) {
+                              updateItemQuantity(item.id, item.quantity - 1);
+                            }
+                          }}
+                          className="px-[6px] hover:bg-slate-100 flex items-center justify-center"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-2 font-bold text-[12px] min-w-[20px] text-center">{formatQty(item.quantity, item.packaging)}</span>
+                        <button
+                          onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                          className="px-[6px] hover:bg-slate-100 flex items-center justify-center"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+
+                      <p className="font-semibold text-[13px] lg:text-sm w-[40px] text-right">{formatCurrency(item.totalPrice)}</p>
+                      
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-500 hover:text-red-700 ml-1"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-[16px] h-[16px]" />
                       </button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-400">
-                  <Receipt className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No items added</p>
+                <div className="flex items-center justify-center gap-2 h-[60px] text-slate-400">
+                  <Receipt className="w-[32px] h-[32px] opacity-50" />
+                  <p className="text-[13px]">No items added</p>
                 </div>
               )}
             </div>
 
             {/* Totals */}
-            <div className="pt-4 border-t border-dashed border-slate-200 space-y-2">
-              <div className="flex justify-between text-sm text-slate-600">
+            <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
+              <div className="flex justify-between text-[13px] text-slate-600">
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600 text-sm">Discount</span>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="text-slate-600">Discount</span>
+                <div className="flex items-center gap-1">
                   <input
                     type="number"
                     value={discountValue}
                     onChange={(e) => setDiscountValue(Number(e.target.value))}
-                    className="w-16 h-8 text-xs rounded border border-slate-200 bg-slate-50 text-right px-2"
+                    className="w-[50px] h-7 text-xs rounded border border-slate-200 bg-slate-50 text-right px-1"
                     placeholder="0"
                   />
                   <select
                     value={discountType}
                     onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'flat')}
-                    className="h-8 text-[10px] rounded border border-slate-200 bg-slate-50 px-2"
+                    className="h-7 text-[10px] rounded border border-slate-200 bg-slate-50 px-1"
                   >
                     <option value="percentage">%</option>
                     <option value="flat">₹</option>
                   </select>
                 </div>
               </div>
-              <div className="flex justify-between text-lg font-bold pt-2">
+              <div className="flex justify-between text-[15px] font-bold pt-2">
                 <span>Total Amount</span>
-                <span className="text-primary">{formatCurrency(total)}</span>
+                <span className="text-[#16a34a]">{formatCurrency(total)}</span>
               </div>
             </div>
           </div>
@@ -826,42 +903,33 @@ export default function BillingPage() {
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => setSalePaymentMode('cash')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       salePaymentMode === 'cash'
-                        ? 'border-primary bg-primary/10'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <Receipt className={`w-5 h-5 ${salePaymentMode === 'cash' ? 'text-primary' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${salePaymentMode === 'cash' ? 'text-primary' : 'text-slate-400'}`}>
-                      Cash
-                    </span>
+                    CASH
                   </button>
                   <button
                     onClick={() => setSalePaymentMode('upi')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       salePaymentMode === 'upi'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <Smartphone className={`w-5 h-5 ${salePaymentMode === 'upi' ? 'text-green-500' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${salePaymentMode === 'upi' ? 'text-green-500' : 'text-slate-400'}`}>
-                      UPI
-                    </span>
+                    UPI
                   </button>
                   <button
                     onClick={() => setSalePaymentMode('due')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       salePaymentMode === 'due'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <CreditCard className={`w-5 h-5 ${salePaymentMode === 'due' ? 'text-red-500' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${salePaymentMode === 'due' ? 'text-red-500' : 'text-slate-400'}`}>
-                      Due
-                    </span>
+                    DUE
                   </button>
                 </div>
 
@@ -871,10 +939,10 @@ export default function BillingPage() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Amount Received</label>
                     <input
                       type="number"
-                      value={cashReceived}
+                      value={cashReceived || ''}
                       onChange={(e) => setCashReceived(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                      placeholder="Enter amount received"
+                      className="w-full h-[44px] rounded-[10px] border border-slate-200 bg-slate-50 text-[16px] text-center font-semibold placeholder-slate-300 focus:outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]"
+                      placeholder="Enter amount"
                     />
                     
                     {cashReceived > 0 && (
@@ -919,42 +987,33 @@ export default function BillingPage() {
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => setOrderPaymentMode('full_paid')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       orderPaymentMode === 'full_paid'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <Receipt className={`w-5 h-5 ${orderPaymentMode === 'full_paid' ? 'text-green-500' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${orderPaymentMode === 'full_paid' ? 'text-green-500' : 'text-slate-400'}`}>
-                      Full Paid
-                    </span>
+                    FULL PAID
                   </button>
                   <button
                     onClick={() => setOrderPaymentMode('full_due')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       orderPaymentMode === 'full_due'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <CreditCard className={`w-5 h-5 ${orderPaymentMode === 'full_due' ? 'text-red-500' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${orderPaymentMode === 'full_due' ? 'text-red-500' : 'text-slate-400'}`}>
-                      Full Due
-                    </span>
+                    FULL DUE
                   </button>
                   <button
                     onClick={() => setOrderPaymentMode('advance')}
-                    className={`flex-1 py-3 border-2 rounded-xl flex flex-col items-center gap-1 transition-colors ${
+                    className={`flex-1 h-[40px] rounded-[10px] font-bold text-[12px] transition-colors ${
                       orderPaymentMode === 'advance'
-                        ? 'border-amber-500 bg-amber-50'
-                        : 'border-slate-200 bg-slate-50'
+                        ? 'bg-[#16a34a] text-white border-transparent'
+                        : 'bg-white border border-[#e5e7eb] text-slate-600'
                     }`}
                   >
-                    <ArrowRight className={`w-5 h-5 ${orderPaymentMode === 'advance' ? 'text-amber-500' : 'text-slate-400'}`} />
-                    <span className={`text-[10px] font-bold uppercase ${orderPaymentMode === 'advance' ? 'text-amber-500' : 'text-slate-400'}`}>
-                      Advance
-                    </span>
+                    ADVANCE
                   </button>
                 </div>
 
@@ -964,10 +1023,10 @@ export default function BillingPage() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Advance Amount</label>
                     <input
                       type="number"
-                      value={advanceAmount}
+                      value={advanceAmount || ''}
                       onChange={(e) => setAdvanceAmount(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-                      placeholder="Enter advance amount"
+                      className="w-full h-[44px] rounded-[10px] border border-slate-200 bg-slate-50 text-[16px] text-center font-semibold placeholder-slate-300 focus:outline-none focus:border-[#16a34a] focus:ring-1 focus:ring-[#16a34a]"
+                      placeholder="Enter amount"
                       max={total}
                     />
                     
@@ -998,8 +1057,8 @@ export default function BillingPage() {
             {/* Status Summary */}
             <div className={`mt-4 p-3 rounded-lg ${getStatusColor()}`}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-bold">Status:</span>
-                <span className="text-sm font-bold">{getStatusText()}</span>
+                <span className="text-[13px] font-bold">Status:</span>
+                <span className="text-[13px] font-bold">{getStatusText()}</span>
               </div>
             </div>
 
@@ -1007,14 +1066,13 @@ export default function BillingPage() {
             <button
               onClick={handleSubmitBill}
               disabled={isSubmitting || currentBill.items.length === 0}
-              className={`w-full mt-4 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-3 transition-all ${
+              className={`w-full mt-4 h-[48px] rounded-[12px] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all sticky bottom-[72px] lg:static lg:bottom-auto z-40 ${
                 billingMode === 'order' 
-                  ? 'bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300'
-                  : 'bg-primary hover:bg-primary/90 disabled:bg-slate-300'
-              } disabled:cursor-not-allowed text-white`}
+                  ? 'bg-amber-500 hover:bg-amber-600 disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
+                  : 'bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
+              }`}
             >
-              <Printer className="w-5 h-5" />
-              {isSubmitting ? 'Processing...' : billingMode === 'order' ? 'Generate Order' : 'Generate Bill'}
+              🖨 Generate Bill
             </button>
           </div>
         </div>
@@ -1049,15 +1107,110 @@ export default function BillingPage() {
       )}
       
       {/* Quick Add Customer Modal */}
-      <QuickAddCustomerModal
-        isOpen={showAddCustomerModal}
-        onClose={() => setShowAddCustomerModal(false)}
-        onSuccess={(customer) => {
-          handleCustomerSelect(customer as CustomerWithStats);
-          setShowAddCustomerModal(false);
-          addToast('success', 'Customer added successfully');
-        }}
-      />
+      {showAddCustomerModal && (
+        <QuickAddCustomerModal
+          isOpen={showAddCustomerModal}
+          onClose={() => setShowAddCustomerModal(false)}
+          onSuccess={(customer) => {
+            handleCustomerSelect(customer);
+            setShowAddCustomerModal(false);
+          }}
+        />
+      )}
+
+      {/* Packaging Modal (Mobile) */}
+      {packagingModal && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm lg:hidden pb-[72px]">
+          <div className="bg-white w-full rounded-t-[20px] p-5 pb-8 animate-slide-up">
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
+            
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[16px] font-semibold">Add to Bill</h3>
+              <button onClick={() => setPackagingModal(null)} className="p-2 hover:bg-slate-100 rounded-full">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-[14px] font-semibold text-slate-800">
+                {packagingModal.product.name} – {packagingModal.size.name}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center border-2 border-slate-200 rounded-xl overflow-hidden bg-white">
+                <button
+                  onClick={() => setPackagingQty(Math.max(1, packagingQty - 1))}
+                  className="px-4 py-3 hover:bg-slate-100 text-slate-500"
+                >
+                  <Minus className="w-6 h-6" />
+                </button>
+                <span className="w-16 text-center font-bold text-[24px]">{packagingQty}</span>
+                <button
+                  onClick={() => setPackagingQty(packagingQty + 1)}
+                  className="px-4 py-3 hover:bg-slate-100 text-slate-500"
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mb-6">
+              <button
+                onClick={() => setPackagingType('bottle')}
+                className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  packagingType === 'bottle'
+                    ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
+                    : 'border-2 border-[#e5e7eb] bg-white'
+                }`}
+              >
+                <span className="text-[20px]">🍾</span>
+                <span className="text-[14px] font-semibold text-slate-800">Bottles</span>
+                <span className="text-[12px] text-slate-500">₹{packagingModal.size.pricePerBottle} each</span>
+              </button>
+              
+              <button
+                onClick={() => setPackagingType('carton')}
+                className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  packagingType === 'carton'
+                    ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
+                    : 'border-2 border-[#e5e7eb] bg-white'
+                }`}
+              >
+                <span className="text-[20px]">📦</span>
+                <span className="text-[14px] font-semibold text-slate-800">Cartons</span>
+                <span className="text-[12px] text-slate-500">
+                  ₹{packagingModal.size.pricePerCarton}
+                  {packagingModal.size.bottlesPerCarton ? ` (${packagingModal.size.bottlesPerCarton} pcs)` : ''}
+                </span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                const isCarton = packagingType === 'carton';
+                const unitPrice = isCarton ? packagingModal.size.pricePerCarton : packagingModal.size.pricePerBottle;
+                addItem({
+                  id: crypto.randomUUID(),
+                  productId: packagingModal.product.id,
+                  sizeId: packagingModal.size.id,
+                  productName: packagingModal.product.name,
+                  sizeName: packagingModal.size.name,
+                  packaging: packagingType,
+                  quantity: packagingQty,
+                  unitPrice,
+                  totalPrice: unitPrice * packagingQty,
+                });
+                addToast('success', `Added ${packagingQty} ${packagingType === 'carton' ? 'cartons' : 'bottles'} to bill`);
+                setPackagingModal(null);
+              }}
+              className="w-full h-[46px] bg-[#16a34a] text-white rounded-[10px] font-semibold text-[15px]"
+            >
+              Add to Bill
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

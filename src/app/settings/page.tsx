@@ -1,10 +1,11 @@
 'use client';
 
+import { signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useToast } from '@/components/Toast';
-import { Settings, Store, User, Save, Download, Package, ShoppingCart, Receipt, Users, Home } from 'lucide-react';
+import { Settings, Store, User, Save, Download, Package, ShoppingCart, Receipt, Users, Home, LogOut } from 'lucide-react';
 import { downloadCSV, downloadAllData } from '@/lib/exportData';
 
 export default function SettingsPage() {
@@ -31,6 +32,8 @@ export default function SettingsPage() {
   const [localShopAddress, setLocalShopAddress] = useState(shopAddress);
   const [localTaxRate, setLocalTaxRate] = useState(taxRate);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     // Initialize settings from API on mount
@@ -79,6 +82,19 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Export error:', error);
       addToast('error', 'Failed to export data');
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut({ 
+        callbackUrl: '/login',
+        redirect: true 
+      });
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutConfirm(false);
     }
   };
 
@@ -250,6 +266,40 @@ export default function SettingsPage() {
           Download All Data
         </button>
       </div>
+
+      <button
+        onClick={() => setShowLogoutConfirm(true)}
+        className="w-full h-[46px] bg-white border-[1.5px] border-[#dc2626] text-[#dc2626] rounded-[10px] text-[14px] font-semibold flex items-center justify-center gap-2"
+      >
+        <LogOut className="w-4 h-4" />
+        Logout
+      </button>
+
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-xl p-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Logout</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to logout?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 h-11 rounded-[10px] border border-slate-200 text-slate-700 text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex-1 h-11 rounded-[10px] bg-[#dc2626] disabled:bg-red-300 text-white text-sm font-semibold"
+              >
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

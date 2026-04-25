@@ -91,8 +91,8 @@ export async function verifyAuthToken(token?: string | null): Promise<AuthSessio
   const isValid = await crypto.subtle.verify(
     'HMAC',
     await getSigningKey(),
-    decodeBase64Url(signatureBase64),
-    encoder.encode(payloadBase64)
+    decodeBase64Url(signatureBase64) as any,
+    encoder.encode(payloadBase64) as any
   );
 
   if (!isValid) return null;

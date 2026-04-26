@@ -46,6 +46,7 @@ export default function ProductsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -142,11 +143,14 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+
     if (!formData.name || !formData.brand || formData.sizes.length === 0) {
       addToast('error', 'Please fill in all required fields');
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, formData);
@@ -162,9 +166,11 @@ export default function ProductsPage() {
       // Refresh both products and inventory after add/edit (in background)
       refreshProducts().catch(console.error);
       refreshInventory().catch(console.error);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving product:', error);
-      addToast('error', 'Failed to save product. Please try again.');
+      addToast('error', error.message || 'Failed to save product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -544,9 +550,14 @@ export default function ProductsPage() {
               <button
                 type="submit"
                 onClick={handleSubmit}
-                className="flex-1 md:flex-none h-[46px] md:h-auto md:px-6 md:py-2.5 bg-[#16a34a] md:bg-primary text-white text-[15px] md:text-sm font-semibold rounded-[10px] md:rounded-lg shadow-md hover:bg-primary/90 transition-colors flex items-center justify-center"
+                disabled={isSubmitting}
+                className="flex-1 md:flex-none h-[46px] md:h-auto md:px-6 md:py-2.5 bg-[#16a34a] md:bg-primary text-white text-[15px] md:text-sm font-semibold rounded-[10px] md:rounded-lg shadow-md transition-colors flex items-center justify-center"
+                style={{
+                  opacity: isSubmitting ? 0.6 : 1,
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                }}
               >
-                {editingProduct ? 'Update Product' : 'Save Product'}
+                {isSubmitting ? 'Saving...' : (editingProduct ? 'Update Product' : 'Save Product')}
               </button>
             </div>
           </div>

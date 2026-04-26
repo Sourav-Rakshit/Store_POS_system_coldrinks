@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Bell, Droplets, Menu, Settings, LogOut } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { usePathname, useRouter } from 'next/navigation';
@@ -53,6 +54,7 @@ export function Header() {
         border-b border-slate-200 
         animate-slide-down
       "
+      style={{ minHeight: '56px' }}
     >
       <div className="flex items-center justify-between px-4 lg:px-8 h-16">
         {/* Left Side - Menu & Logo */}
@@ -70,14 +72,15 @@ export function Header() {
             <Menu className="w-5 h-5" />
           </button>
           
-          {/* Tappable Logo */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="bg-primary p-2 rounded-lg text-white">
-              <Droplets className="w-5 h-5" />
-            </div>
-            <h1 className="text-lg font-bold text-slate-900">
-              {mounted ? shopName : 'Store'}
-            </h1>
+          <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+            <Image
+              src="/logo.svg"
+              alt="Saikat Enterprise"
+              width={150}
+              height={50}
+              priority
+              style={{ objectFit: 'contain' }}
+            />
           </Link>
         </div>
 

@@ -146,14 +146,17 @@ export async function PUT(
   }
 }
 
-// DELETE - Soft delete (set isActive = false)
+// PATCH - Update customer (Alias to PUT)
+export const PATCH = PUT;
+
+// DELETE - Hard delete after balance check
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    console.log('🔄 Soft deleting customer:', id);
+    console.log('🔄 Deleting customer:', id);
 
     // Check if customer exists
     const [existingCustomer] = await db
@@ -168,16 +171,21 @@ export async function DELETE(
       );
     }
 
-    // Soft delete - set isActive to false
-    await db
-      .update(customers)
-      .set({
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(customers.id, id));
+    if (parseFloat(existingCustomer.outstandingBalance as any) > 0) {
+      return NextResponse.json(
+        { error: 'Cannot delete customer with outstanding balance' },
+        { status: 400 }
+      );
+    }
 
-    console.log('✅ Customer soft deleted:', id);
+    // Manually handle foreign key dependencies to ensure safe deletion
+    await db.delete(customerPayments).where(eq(customerPayments.customerId, id));
+    await db.update(bills).set({ customerId: null }).where(eq(bills.customerId, id));
+
+    // Hard delete
+    await db.delete(customers).where(eq(customers.id, id));
+
+    console.log('✅ Customer deleted:', id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('❌ Customer delete error:', error);

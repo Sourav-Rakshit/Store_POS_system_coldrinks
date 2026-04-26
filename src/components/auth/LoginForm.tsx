@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Store, Eye, EyeOff, Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export function LoginForm() {
   const router = useRouter();
@@ -41,12 +42,19 @@ export function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
       <div className="bg-white rounded-[16px] border border-[#e5e7eb] w-full max-w-[380px] p-[32px_24px] mx-4 shadow-sm">
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 bg-[#16a34a] rounded-full flex items-center justify-center mb-4 shadow-md text-white">
-            <Store size={28} />
-          </div>
-          <h1 className="text-[20px] font-bold text-gray-900">Saikat Enterprise</h1>
-          <p className="text-[13px] text-gray-500 mt-1">POS System</p>
+        <div style={{ 
+          textAlign: 'center', 
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'center' 
+        }}>
+          <Image
+            src="/logo.svg"
+            alt="Saikat Enterprise"
+            width={200}
+            height={90}
+            priority
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col">

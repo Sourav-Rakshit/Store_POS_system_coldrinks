@@ -44,6 +44,7 @@ export interface SKU {
   pricePerCarton?: number;
   bottlesPerCarton?: number;
   isPinned?: boolean;
+  pinnedAt?: string | null;
 }
 
 export interface StockEntry {

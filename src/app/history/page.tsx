@@ -170,9 +170,7 @@ export default function HistoryPage() {
     }
   };
 
-  const handlePrint = (bill: Bill) => {
-    window.print();
-  };
+
 
   const handleCloseModal = () => {
     setSelectedBill(null);
@@ -414,7 +412,7 @@ export default function HistoryPage() {
 
       {/* Bill Detail Modal */}
       {selectedBill && (
-        <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center bg-black/50 backdrop-blur-sm lg:p-4">
+        <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center bg-black/50 backdrop-blur-sm lg:p-4" style={{ touchAction: 'none' }}>
           <div className="bg-white w-full lg:max-w-lg rounded-t-[20px] lg:rounded-2xl shadow-2xl overflow-hidden h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col">
             <div className="p-4 lg:p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
               <div>
@@ -430,9 +428,11 @@ export default function HistoryPage() {
             </div>
             
             {/* Receipt Preview - Scrollable */}
-            <div className="p-4 bg-white lg:bg-slate-50 overflow-y-auto flex-1">
-              <div className="bg-[#f9fafb] lg:bg-transparent border border-slate-100 lg:border-none rounded-xl p-4 lg:p-0 lg:scale-50 lg:origin-top lg:-mx-16 lg:-mb-8 w-full max-h-[50vh] lg:max-h-none overflow-y-auto overflow-x-hidden touch-pan-y" style={{ touchAction: 'pinch-zoom' }}>
-                <p className="text-center text-xs text-slate-400 mb-2 lg:hidden font-medium">Pinch to zoom</p>
+            <div className="p-4 bg-white lg:bg-slate-50 overflow-hidden flex-1">
+              <div 
+                className="bg-[#f9fafb] lg:bg-transparent border border-slate-100 lg:border-none rounded-xl p-4 lg:p-0 lg:scale-50 lg:origin-top lg:-mx-16 lg:-mb-8 w-full relative overflow-y-scroll overscroll-contain touch-pan-y min-h-[250px] max-h-[calc(100vh-340px)] lg:max-h-none" 
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
                 <div ref={receiptRef} className="w-full flex justify-center origin-top lg:origin-top lg:scale-100 transform min-w-[300px]">
                   <ThermalReceipt bill={selectedBill} settings={settingsRef.current} />
                 </div>
@@ -444,7 +444,7 @@ export default function HistoryPage() {
               <button
                 onClick={handleDownload}
                 disabled={isAnyLoading}
-                className="w-full h-[46px] flex items-center justify-center gap-2 bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#86efac] text-white rounded-[10px] font-semibold text-[14px] transition-colors"
+                className="w-full h-[46px] flex items-center justify-center gap-2 bg-white border-[1.5px] border-[#16a34a] hover:bg-green-50 disabled:opacity-50 text-[#16a34a] rounded-[10px] font-semibold text-[14px] transition-colors"
               >
                 {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-4 h-4" />}
                 Download JPG
@@ -454,10 +454,10 @@ export default function HistoryPage() {
                 <button
                   onClick={handleShare}
                   disabled={isAnyLoading}
-                  className="flex-1 h-[46px] flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] font-semibold text-[14px] transition-colors"
+                  className="flex-1 h-[46px] flex items-center justify-center gap-2 bg-[#16a34a] border-none hover:bg-[#15803d] disabled:opacity-50 text-white rounded-[10px] font-semibold text-[14px] transition-colors"
                 >
-                  {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-4 h-4" />}
-                  Share
+                  {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-4 h-4" />}
+                  Print
                 </button>
 
                 <button
@@ -469,15 +469,6 @@ export default function HistoryPage() {
                   WhatsApp
                 </button>
               </div>
-
-              <button
-                onClick={() => handlePrint(selectedBill)}
-                disabled={isAnyLoading}
-                className="w-full h-[46px] flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] font-semibold text-[14px] transition-colors"
-              >
-                <Printer className="w-4 h-4" />
-                Print
-              </button>
             </div>
           </div>
         </div>

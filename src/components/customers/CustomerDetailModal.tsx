@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, CreditCard, Receipt, DollarSign, Loader2, Package, Calendar } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, CreditCard, Receipt, DollarSign, Loader2, Package, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { CustomerWithStats, CustomerPayment, Bill } from '@/types';
 import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
 import { CUSTOMER_TYPES, getBalanceStatus } from '@/lib/constants/customerConstants';
 import { ManageDueModal } from './ManageDueModal';
 
@@ -13,6 +14,7 @@ interface CustomerDetailModalProps {
   onClose: () => void;
   onUpdate?: (id: string, data: any) => Promise<void>;
   onRecordPayment?: (customerId: string, payment: any) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 type Tab = 'overview' | 'payments' | 'bills';
@@ -23,6 +25,7 @@ export function CustomerDetailModal({
   onClose,
   onUpdate,
   onRecordPayment,
+  onDelete,
 }: CustomerDetailModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +33,18 @@ export function CustomerDetailModal({
   const [customerData, setCustomerData] = useState<CustomerWithStats>(customer);
   const [payments, setPayments] = useState<CustomerPayment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
+  const { addToast } = useToast();
+
+  // Edit state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(customer.name || '');
+  const [editPhone, setEditPhone] = useState(customer.phone || '');
+  const [nameError, setNameError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Delete state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Fetch full customer data when opened
   useEffect(() => {
@@ -45,6 +60,8 @@ export function CustomerDetailModal({
       if (response.ok) {
         const data = await response.json();
         setCustomerData(data);
+        setEditName(data.name || '');
+        setEditPhone(data.phone || '');
         setPayments(data.payments || []);
         setBills(data.bills || []);
       }
@@ -68,6 +85,60 @@ export function CustomerDetailModal({
     setShowManageDue(false);
   };
   
+  const handleSaveEdit = async () => {
+    if (!editName.trim()) {
+      setNameError('Name is required');
+      return;
+    }
+    setNameError('');
+    setIsSaving(true);
+    try {
+      const response = await fetch(`/api/customers/${customer.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: editName.trim(),
+          phone: editPhone.trim() 
+        })
+      });
+      if (!response.ok) throw new Error('Failed to update customer');
+      
+      const updated = await response.json();
+      setCustomerData(prev => ({ ...prev, ...updated }));
+      addToast('success', 'Customer updated successfully');
+      setIsEditing(false);
+      if (onUpdate) await onUpdate(customer.id, updated);
+    } catch (err) {
+      console.error(err);
+      addToast('error', 'Failed to update customer');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/customers/${customer.id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok && response.status !== 404) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete customer');
+      }
+      
+      addToast('success', 'Customer deleted successfully');
+      if (onDelete) await onDelete(customer.id);
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      addToast('error', err.message || 'Failed to delete customer');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Separate bills into sales and orders
   const salesBills = bills.filter(b => b.billType === 'sale' || !b.billType);
   const orderBills = bills.filter(b => b.billType === 'order');
@@ -108,9 +179,18 @@ export function CustomerDetailModal({
               </div>
               <div>
                 <h2 className="text-lg font-bold">{customerData.name}</h2>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${typeConfig.badgeColor}`}>
-                  {typeConfig.label}
-                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${typeConfig.badgeColor}`}>
+                    {typeConfig.label}
+                  </span>
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded"
+                    title="Edit Customer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
             <button
@@ -163,6 +243,60 @@ export function CustomerDetailModal({
               </div>
             ) : activeTab === 'overview' ? (
               <div className="space-y-4">
+                {/* Edit Form */}
+                {isEditing && (
+                  <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Name</label>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => {
+                            setEditName(e.target.value);
+                            if (e.target.value.trim()) setNameError('');
+                          }}
+                          className={`w-full h-10 px-3 rounded-lg border-[1.5px] text-[15px] font-semibold outline-none focus:ring-2 focus:ring-primary/20 transition-all ${
+                            nameError ? 'border-red-500' : 'border-[#16a34a]'
+                          }`}
+                        />
+                        {nameError && <p className="text-[11px] text-red-500 mt-1 font-medium">{nameError}</p>}
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Phone</label>
+                        <input
+                          type="tel"
+                          value={editPhone}
+                          onChange={(e) => setEditPhone(e.target.value)}
+                          placeholder="Enter phone number"
+                          className="w-full h-10 px-3 rounded-lg border-[1.5px] border-[#e5e7eb] text-[15px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={() => {
+                            setIsEditing(false);
+                            setEditName(customerData.name || '');
+                            setEditPhone(customerData.phone || '');
+                            setNameError('');
+                          }}
+                          className="flex-1 h-10 bg-white border border-[#e5e7eb] rounded-lg text-[14px] font-medium hover:bg-slate-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={isSaving}
+                          className="flex-1 h-10 bg-[#16a34a] text-white rounded-lg text-[14px] font-semibold hover:bg-[#15803d] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                          Save Changes
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Financial Summary */}
                 <div className="bg-slate-50 rounded-xl p-4">
                   <h3 className="text-sm font-bold text-slate-600 mb-3">Financial Summary</h3>
@@ -364,6 +498,33 @@ export function CustomerDetailModal({
               </div>
             )}
           </div>
+
+          {/* Bottom Actions */}
+          <div className="p-4 border-t border-slate-200">
+            {customerData.outstandingBalance > 0 ? (
+              <div className="relative group">
+                <button
+                  disabled
+                  className="w-full h-[44px] bg-white border-[1.5px] border-[#9ca3af] text-[#9ca3af] rounded-[10px] font-semibold text-[14px] flex items-center justify-center gap-2 opacity-40 cursor-not-allowed"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Customer
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[250px] px-3 py-2 bg-slate-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none z-10 text-center">
+                  Clear outstanding balance before deleting
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="w-full h-[44px] bg-white border-[1.5px] border-[#dc2626] text-[#dc2626] rounded-[10px] font-semibold text-[14px] flex items-center justify-center gap-2 hover:bg-red-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Customer
+              </button>
+            )}
+          </div>
         </div>
       </div>
       
@@ -376,6 +537,36 @@ export function CustomerDetailModal({
           onClose={() => setShowManageDue(false)}
           onSuccess={handlePaymentRecorded}
         />
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-5">
+            <h3 className="text-lg font-bold mb-2 text-slate-800">Delete Customer</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-slate-700">{customerData.name}</span>? This action cannot be undone. All their bill history will be preserved.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 h-[44px] bg-white border border-[#e5e7eb] text-[#374151] rounded-[10px] font-medium hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 h-[44px] bg-[#dc2626] text-white rounded-[10px] font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

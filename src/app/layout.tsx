@@ -25,13 +25,19 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Cold Drinks POS System',
-  description: 'POS & Inventory Management System',
-  
+  title: 'Saikat Enterprise',
+  description: 'Beverages & Distribution POS System',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Cold Drinks POS',
+    title: 'Saikat Enterprise POS',
   },
 };
 
@@ -42,6 +48,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon.svg" />
+      </head>
       <body className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} font-sans overflow-x-hidden`}>
         <SessionProvider>
           <ToastProvider>

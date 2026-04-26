@@ -47,7 +47,7 @@ export async function validateStock(items: BillItem[]): Promise<StockValidationR
   
   for (const item of items) {
     // Find the SKU for this item
-    const sku = inventory.find(s => s.productId === item.productId && s.sizeId === item.sizeId);
+    const sku = inventory.find(s => s.productId === item.productId && (s.sizeId === item.sizeId || s.productSizeId === item.sizeId || s.sizeName === item.sizeName));
     
     if (!sku) {
       // SKU doesn't exist - treat as out of stock
@@ -63,9 +63,9 @@ export async function validateStock(items: BillItem[]): Promise<StockValidationR
     // Calculate required quantity in the same unit as currentStock
     let requiredQuantity = item.quantity;
     if (item.packaging === 'carton') {
-      // Get product to find bottles per carton - use default of 12
+      // Get product to find bottles per carton - use default of 12 if not found
       // The inventory stores in bottles, so we convert cartons to bottles
-      requiredQuantity = item.quantity * 12; // Default assumption
+      requiredQuantity = item.quantity * (sku.bottlesPerCarton || 12);
     }
     
     if (sku.currentStock < requiredQuantity) {
@@ -111,7 +111,7 @@ export async function validateSingleItemStock(
   // Fetch fresh inventory bypassing all cache
   const inventory = await storage.getInventory(true);
   
-  const sku = inventory.find(s => s.productId === productId && s.sizeId === sizeId);
+  const sku = inventory.find(s => s.productId === productId && (s.sizeId === sizeId || s.productSizeId === sizeId));
   
   if (!sku) {
     return false;
@@ -119,7 +119,7 @@ export async function validateSingleItemStock(
   
   let requiredQuantity = quantity;
   if (packaging === 'carton') {
-    requiredQuantity = quantity * 12;
+    requiredQuantity = quantity * (sku.bottlesPerCarton || 12);
   }
   
   return sku.currentStock >= requiredQuantity;

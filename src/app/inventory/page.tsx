@@ -11,9 +11,7 @@ import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { DataFreshness } from '@/components/ui/DataFreshness';
 import { Search, Plus, Package, AlertCircle, CheckCircle, XCircle, Filter, Pin, Trash2, Home, Menu } from 'lucide-react';
 import { Product, SKU, StockStatus } from '@/types';
-
-const PINNED_SKUS_KEY = 'frostyflow-pinned-skus';
-
+import { formatStock } from '@/lib/utils';
 const PRODUCT_ICONS = [
   { name: 'Cola', emoji: '🥤' },
   { name: 'Lemon', emoji: '🍋' },
@@ -24,16 +22,6 @@ const PRODUCT_ICONS = [
   { name: 'Orange', emoji: '🍊' },
   { name: 'Other', emoji: '📦' },
 ];
-
-function getPinnedSkus(): string[] {
-  if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(PINNED_SKUS_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
-
-function setPinnedSkus(ids: string[]) {
-  localStorage.setItem(PINNED_SKUS_KEY, JSON.stringify(ids));
-}
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -46,6 +34,8 @@ export default function InventoryPage() {
     setFilterStatus,
     addStock,
     removeSku,
+    togglePin,
+    clearStock,
     getFilteredInventory,
     getInventoryStats,
     initializeFromStorage: initInventory,
@@ -63,11 +53,10 @@ export default function InventoryPage() {
   const [stockType, setStockType] = useState<'bottles' | 'cartons'>('cartons');
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [pinnedSkus, setPinnedSkusState] = useState<string[]>([]);
   const [deleteConfirmSku, setDeleteConfirmSku] = useState<SKU | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('Soft Drinks');
 
-  const CATEGORIES = ['All', 'Soft Drinks', 'Juices', 'Water', 'Energy Drinks', 'Others'];
+  const CATEGORIES = ['Soft Drinks', 'Juices', 'Water', 'Energy Drinks', 'Others', 'All'];
 
   const { ownerName } = useSettingsStore();
 
@@ -81,7 +70,6 @@ export default function InventoryPage() {
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([initProducts(), initInventory()]);
-      setPinnedSkusState(getPinnedSkus());
       setIsLoading(false);
     };
     initialize();
@@ -93,11 +81,11 @@ export default function InventoryPage() {
         setIsTypeDropdownOpen(false);
       }
     };
-    
+
     if (isTypeDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -135,8 +123,18 @@ export default function InventoryPage() {
       });
     }
 
-    const pinned = filtered.filter(sku => pinnedSkus.includes(sku.id));
-    const unpinned = filtered.filter(sku => !pinnedSkus.includes(sku.id));
+    const pinned = filtered.filter(sku => sku.isPinned).sort((a, b) => {
+      // Sort oldest pin at very top (ascending pinnedAt)
+      if (a.pinnedAt && b.pinnedAt) {
+        return new Date(a.pinnedAt).getTime() - new Date(b.pinnedAt).getTime();
+      }
+      return 0;
+    });
+    const unpinned = filtered.filter(sku => !sku.isPinned).sort((a, b) => {
+      const nameA = a.productName || '';
+      const nameB = b.productName || '';
+      return nameA.localeCompare(nameB);
+    });
     return [...pinned, ...unpinned];
   };
 
@@ -171,18 +169,30 @@ export default function InventoryPage() {
     setIsAddStockModalOpen(false);
   };
 
-  const handlePinToggle = (skuId: string) => {
-    const newPinned = pinnedSkus.includes(skuId)
-      ? pinnedSkus.filter(id => id !== skuId)
-      : [...pinnedSkus, skuId];
-    setPinnedSkusState(newPinned);
-    setPinnedSkus(newPinned);
+  const handlePinToggle = async (skuId: string) => {
+    try {
+      await togglePin(skuId);
+      const sku = inventory.find(s => s.id === skuId);
+      if (sku) {
+        if (!sku.isPinned) {
+          addToast('success', 'Pinned to top');
+        } else {
+          addToast('success', 'Unpinned');
+        }
+      }
+    } catch (error) {
+      addToast('error', 'Failed to toggle pin');
+    }
   };
 
-  const handleDeleteSku = (sku: SKU) => {
-    removeSku(sku.id);
-    addToast('success', 'SKU removed from inventory');
-    setDeleteConfirmSku(null);
+  const handleDeleteSku = async (sku: SKU) => {
+    try {
+      await clearStock(sku.id);
+      addToast('success', `Stock cleared for ${sku.productName || sku.skuCode}`);
+      setDeleteConfirmSku(null);
+    } catch (error) {
+      addToast('error', 'Failed to clear stock');
+    }
   };
 
   const getStatusColor = (status: StockStatus) => {
@@ -381,10 +391,10 @@ export default function InventoryPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredInventory.length > 0 ? (
                 filteredInventory.map((sku) => {
-                  const isPinned = pinnedSkus.includes(sku.id);
+                  const isPinned = sku.isPinned;
 
                   return (
-                    <tr key={sku.id} className={`hover:bg-slate-50 transition-colors ${isPinned ? 'bg-primary/5' : ''}`}>
+                    <tr key={sku.id} className={`hover:bg-slate-50 transition-colors ${isPinned ? 'bg-[#f0fdf4] border-l-[3px] border-[#16a34a]' : ''}`}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="size-10 rounded bg-slate-100 flex items-center justify-center overflow-hidden">
@@ -400,8 +410,8 @@ export default function InventoryPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-semibold text-sm">{sku.productName || 'Unknown'}</p>
                               {isPinned && (
-                                <span className="size-5 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <Pin className="w-3 h-3 text-primary fill-current" />
+                                <span className="px-1.5 py-0.5 rounded-md bg-[#f0fdf4] border border-[#16a34a]/20 text-[#16a34a] text-[10px] font-bold">
+                                  Pinned
                                 </span>
                               )}
                             </div>
@@ -412,15 +422,12 @@ export default function InventoryPage() {
                       <td className="px-6 py-4 text-sm">{sku.sizeName || 'Unknown'}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold font-mono">{sku.currentStock} Bottles</span>
-                          {sku.bottlesPerCarton && (
-                            <span className="text-xs text-slate-400 font-mono">
-                              {Math.floor(sku.currentStock / sku.bottlesPerCarton)} Cartons
-                            </span>
-                          )}
+                          <span className="text-sm font-bold font-mono">
+                            {formatStock(sku.currentStock, sku.bottlesPerCarton)}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-mono">{sku.lowStockThreshold} Bottles</td>
+                      <td className="px-6 py-4 text-sm text-slate-500 font-mono">{formatStock(sku.lowStockThreshold || 0, sku.bottlesPerCarton)}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(sku.status)}`}>
                           {StatusIcon(sku.status)}
@@ -431,15 +438,15 @@ export default function InventoryPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handlePinToggle(sku.id)}
-                            className={`p-2 rounded-lg transition-colors ${isPinned ? 'bg-primary text-white' : 'text-slate-400 hover:text-primary hover:bg-primary/5'}`}
+                            className={`p-2 rounded-lg transition-colors ${isPinned ? 'bg-[#16a34a] text-white' : 'text-[#9ca3af] hover:text-[#16a34a] hover:bg-[#16a34a]/10'}`}
                             title={isPinned ? 'Unpin' : 'Pin to top'}
                           >
-                            <Pin className="w-5 h-5" />
+                            <Pin className={`w-5 h-5 ${isPinned ? 'fill-current' : ''}`} />
                           </button>
                           <button
                             onClick={() => setDeleteConfirmSku(sku)}
                             className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                            title="Delete SKU"
+                            title="Clear Stock"
                           >
                             <Trash2 className="w-5 h-5" />
                           </button>
@@ -478,10 +485,10 @@ export default function InventoryPage() {
       <div className="lg:hidden space-y-2.5 !mt-[5px]">
         {filteredInventory.length > 0 ? (
           filteredInventory.map((sku) => {
-            const isPinned = pinnedSkus.includes(sku.id);
+            const isPinned = sku.isPinned;
 
             return (
-              <div key={sku.id} className={`bg-white rounded-xl border border-slate-200 p-3 ${isPinned ? 'bg-primary/5 border-primary/20' : ''}`}>
+              <div key={sku.id} className={`bg-white rounded-xl border border-slate-200 p-3 ${isPinned ? 'bg-[#f0fdf4] border-l-[3px] border-[#16a34a]' : ''}`}>
                 {/* ROW 1: [icon] [Name] [Status] */}
                 <div className="flex items-center justify-between gap-2 mb-0">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -527,19 +534,20 @@ export default function InventoryPage() {
 
                 {/* ROW 3: Stock count | Pin | Delete */}
                 <div className="flex items-center justify-between mt-[2px]">
-                  <div className="text-[14px] font-normal text-slate-500 ml-11">
-                    {sku.currentStock} bot.{sku.bottlesPerCarton ? ` (${Math.floor(sku.currentStock / sku.bottlesPerCarton)} ctn)` : ''}
+                  <div className="text-[14px] font-normal text-[#111] ml-11">
+                    {formatStock(sku.currentStock, sku.bottlesPerCarton)}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <button
                       onClick={() => handlePinToggle(sku.id)}
                       className="transition-colors flex items-center justify-center"
                     >
-                      <Pin className={`w-4 h-4 ${isPinned ? 'text-primary fill-current' : 'text-slate-400 hover:text-primary'}`} />
+                      <Pin className={`w-4 h-4 ${isPinned ? 'text-[#16a34a] fill-current' : 'text-[#9ca3af] hover:text-[#16a34a]'}`} />
                     </button>
                     <button
                       onClick={() => setDeleteConfirmSku(sku)}
                       className="text-red-400 hover:text-red-500 transition-colors flex items-center justify-center"
+                      title="Clear Stock"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -578,7 +586,7 @@ export default function InventoryPage() {
           <div className="bg-white w-full max-w-md rounded-t-[20px] md:rounded-2xl pt-[20px] px-[16px] pb-[32px] md:p-0 shadow-2xl mt-auto md:mt-0">
             {/* Drag Handle (Mobile) */}
             <div className="w-[40px] h-[4px] bg-[#e5e7eb] rounded-sm mx-auto mb-4 md:hidden" />
-            
+
             <div className="md:p-6 md:border-b md:border-slate-100 flex justify-between items-center mb-[14px] md:mb-0">
               <h3 className="text-[17px] font-semibold md:text-lg md:font-bold">Add Stock</h3>
               <button
@@ -588,7 +596,7 @@ export default function InventoryPage() {
                 ✕
               </button>
             </div>
-            
+
             <div className="md:p-6 md:space-y-4">
               <div className="bg-[#f9fafb] rounded-[8px] p-[10px] px-[12px] mb-[14px] md:bg-transparent md:p-0 md:mb-0">
                 <p className="text-[10px] uppercase font-bold text-[#9ca3af] md:text-xs md:text-slate-500 mb-1">Product</p>
@@ -596,7 +604,7 @@ export default function InventoryPage() {
                   {selectedSku.productName || 'Unknown'} - {selectedSku.sizeName || 'Unknown'}
                 </p>
               </div>
-              
+
               <div className="mb-[14px] md:mb-0">
                 <label className="block text-[10px] uppercase font-bold text-[#9ca3af] md:text-xs md:text-slate-500 mb-1">Quantity</label>
                 <div className="flex items-center gap-2 md:block">
@@ -622,10 +630,10 @@ export default function InventoryPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="mb-[14px] md:mb-0">
                 <label className="block text-[10px] uppercase font-bold text-[#9ca3af] md:text-xs md:text-slate-500 mb-1">Type</label>
-                
+
                 {/* Desktop Native Select */}
                 <select
                   value={stockType}
@@ -689,7 +697,7 @@ export default function InventoryPage() {
                   )}
                 </div>
               </div>
-              
+
               <div className="mb-[20px] md:mb-0">
                 <label className="block text-[10px] uppercase font-bold text-[#9ca3af] md:text-xs md:text-slate-500 mb-1">Notes (Optional)</label>
                 <textarea
@@ -700,7 +708,7 @@ export default function InventoryPage() {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-[10px] md:p-6 md:bg-slate-50 md:flex md:gap-3">
               <button
                 onClick={() => setIsAddStockModalOpen(false)}
@@ -727,22 +735,22 @@ export default function InventoryPage() {
               <div className="size-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="w-7 h-7 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold mb-2">Delete SKU?</h3>
+              <h3 className="text-lg font-bold mb-2">Clear Stock</h3>
               <p className="text-sm text-slate-500 mb-6">
-                Are you sure you want to remove this SKU from inventory? This action cannot be undone.
+                This will set {deleteConfirmSku.productName || deleteConfirmSku.skuCode} stock to 0. The product will remain in inventory.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteConfirmSku(null)}
-                  className="flex-1 h-12 rounded-lg font-bold border border-slate-200 hover:bg-slate-50 transition-colors text-base"
+                  className="flex-1 h-12 rounded-lg font-bold border border-[#e5e7eb] bg-white hover:bg-slate-50 transition-colors text-base"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleDeleteSku(deleteConfirmSku)}
-                  className="flex-1 h-12 rounded-lg font-bold bg-red-500 text-white hover:bg-red-600 transition-colors text-base"
+                  className="flex-1 h-12 rounded-lg font-bold bg-[#dc2626] text-white hover:bg-red-700 transition-colors text-base"
                 >
-                  Delete
+                  Clear Stock
                 </button>
               </div>
             </div>

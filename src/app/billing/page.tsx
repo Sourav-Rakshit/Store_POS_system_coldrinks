@@ -10,7 +10,7 @@ import { useCustomerStore } from '@/store/useCustomerStore';
 import { useToast } from '@/components/Toast';
 import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { validateStock } from '@/lib/validateStock';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatStock } from '@/lib/utils';
 import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu } from 'lucide-react';
 import { Product, ProductSize, BillItem, StoreSettings, CustomerWithStats, PaymentMode } from '@/types';
 import { BillSuccessModal } from '@/components/billing/BillSuccessModal';
@@ -24,7 +24,7 @@ type OrderPaymentMode = 'full_paid' | 'full_due' | 'advance';
 
 export default function BillingPage() {
   const router = useRouter();
-  const { products, initializeFromStorage: initProducts } = useProductStore();
+  const { products, initializeFromStorage: initProducts, forceRefresh: refreshProducts } = useProductStore();
   const { 
     currentBill, 
     addItem, 
@@ -163,9 +163,33 @@ export default function BillingPage() {
     setDiscount(discountType, discountValue);
   }, [discountType, discountValue, setDiscount]);
 
+  // Get stock for selected size
+  const getStockForSize = useCallback((productId: string, sizeId: string, sizeName?: string) => {
+    const sku = inventory.find(s => 
+      s.productId === productId && 
+      (s.sizeId === sizeId || s.productSizeId === sizeId || (sizeName && s.sizeName === sizeName))
+    );
+    return sku?.currentStock || 0;
+  }, [inventory]);
+
+  const getAvailableSizes = useCallback((product: Product) => {
+    return product.sizes.filter(size => {
+      const stock = getStockForSize(product.id, size.id, size.name);
+      return stock > 0;
+    });
+  }, [getStockForSize]);
+
   // Filter products based on search and category
   const filteredProducts = useMemo(() => {
+    if (inventoryLoading) return []; // Show skeleton if loading
+
     let result = products;
+    
+    // Filter out unavailable sizes and products with no available sizes
+    result = result.map(p => ({
+      ...p,
+      sizes: getAvailableSizes(p)
+    })).filter(p => p.sizes.length > 0);
     
     if (selectedBillingCategory !== 'All') {
       const selected = selectedBillingCategory.toLowerCase().trim();
@@ -185,13 +209,7 @@ export default function BillingPage() {
       );
     }
     return result;
-  }, [products, searchQuery, selectedBillingCategory]);
-
-  // Get stock for selected size
-  const getStockForSize = (productId: string, sizeId: string) => {
-    const sku = inventory.find(s => s.productId === productId && s.sizeId === sizeId);
-    return sku?.currentStock || 0;
-  };
+  }, [products, searchQuery, selectedBillingCategory, getAvailableSizes, inventoryLoading]);
 
   // Calculate price based on packaging
   const calculatePrice = () => {
@@ -394,8 +412,9 @@ export default function BillingPage() {
       // Show success modal
       setShowSuccessModal(true);
       
-      // Refresh inventory and bills
-      refreshInventory();
+      // Refresh inventory and products
+      await refreshInventory();
+      await refreshProducts();
       
       // Clear the current bill
       clearCurrentBill();
@@ -664,7 +683,13 @@ export default function BillingPage() {
             </div>
 
             {/* Search Results / All Products */}
-            {filteredProducts.length > 0 && !selectedProduct && (
+            {inventoryLoading ? (
+              <div className="space-y-2 mb-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-full h-[90px] p-3 bg-slate-50 border border-slate-100 rounded-xl lg:rounded-lg animate-pulse"></div>
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 && !selectedProduct ? (
               <div className="space-y-2 mb-4">
                 {filteredProducts.map(product => (
                   <div
@@ -710,7 +735,11 @@ export default function BillingPage() {
                   </div>
                 ))}
               </div>
-            )}
+            ) : !inventoryLoading && !selectedProduct ? (
+              <div className="py-6 text-center text-slate-400 text-[13px]">
+                No available stock in this category
+              </div>
+            ) : null}
 
             {/* Item Configurator */}
             {selectedProduct && selectedSize && (
@@ -719,7 +748,7 @@ export default function BillingPage() {
                   <div>
                     <h4 className="font-bold">{selectedProduct.name}</h4>
                     <p className="text-xs text-slate-500">
-                      Stock: {getStockForSize(selectedProduct.id, selectedSize.id)} units
+                      Stock: {formatStock(getStockForSize(selectedProduct.id, selectedSize.id), selectedSize.bottlesPerCarton)}
                     </p>
                   </div>
                   <span className="text-primary font-bold">

@@ -22,7 +22,7 @@ export const settings = pgTable('settings', {
 // ============================================================================
 export const products = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
+  name: varchar('name', { length: 255 }).unique().notNull(),
   brand: varchar('brand', { length: 255 }).notNull(),
   category: varchar('category', { length: 50 }).notNull(),
   imageUrl: text('image_url'),
@@ -54,6 +54,7 @@ export const inventory = pgTable('inventory', {
   lowStockThreshold: integer('low_stock_threshold').default(50),
   status: varchar('status', { length: 20 }).default('Healthy'),
   isPinned: boolean('is_pinned').default(false),
+  pinnedAt: timestamp('pinned_at', { withTimezone: true }),
   lastRestocked: timestamp('last_restocked', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),

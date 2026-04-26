@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -76,11 +77,18 @@ export function Sidebar() {
         </button>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-10 mt-2">
-          <div className="bg-primary p-2 rounded-lg text-white">
-            <IceCream className="w-6 h-6" />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">{shopName || 'Store'}</h1>
+        <div className="flex items-center justify-center mb-10 mt-2">
+          <Image
+            src="/logo.svg"
+            alt="Saikat Enterprise"
+            width={200}
+            height={80}
+            priority
+            style={{ 
+              objectFit: 'contain',
+              marginBottom: '8px'
+            }}
+          />
         </div>
 
         {/* Navigation */}
@@ -120,11 +128,18 @@ export function Sidebar() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 p-6 sticky top-0 h-screen">
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-10">
-          <div className="bg-primary p-2 rounded-lg text-white">
-            <IceCream className="w-6 h-6" />
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">{shopName || 'Store'}</h1>
+        <div className="flex items-center justify-center mb-10">
+          <Image
+            src="/logo.svg"
+            alt="Saikat Enterprise"
+            width={200}
+            height={80}
+            priority
+            style={{ 
+              objectFit: 'contain',
+              marginBottom: '8px'
+            }}
+          />
         </div>
 
         {/* Navigation */}

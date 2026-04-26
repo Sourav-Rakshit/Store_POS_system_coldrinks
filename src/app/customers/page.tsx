@@ -280,6 +280,8 @@ export default function CustomersPage() {
           customer={selectedCustomer}
           isOpen={!!selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
+          onUpdate={async () => { await initialize(); }}
+          onDelete={async () => { await initialize(); setSelectedCustomer(null); }}
           onRecordPayment={async (id, data) => {
             // Handle payment recording
           }}

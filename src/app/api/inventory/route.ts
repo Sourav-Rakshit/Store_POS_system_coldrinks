@@ -31,6 +31,7 @@ export async function GET() {
             lowStockThreshold: existingInventory.lowStockThreshold,
             status: existingInventory.status,
             isPinned: existingInventory.isPinned,
+            pinnedAt: existingInventory.pinnedAt,
             lastRestocked: existingInventory.lastRestocked,
             productSizeId: existingInventory.productSizeId,
             sizeId: existingInventory.productSizeId,
@@ -55,6 +56,7 @@ export async function GET() {
             lowStockThreshold: 50,
             status: 'Out of Stock',
             isPinned: false,
+            pinnedAt: null,
             lastRestocked: null,
             productSizeId: size.id,
             sizeId: size.id,
@@ -73,6 +75,10 @@ export async function GET() {
     }
     
     console.log('📦 Inventory count:', inventoryWithDetails.length);
+    const thumpsUp = inventoryWithDetails.find(i => i.productName?.toLowerCase().includes('thumps up') && i.sizeName?.includes('400ml'));
+    if (thumpsUp) {
+      console.log('🔍 DEBUG: Thumps Up 400ml stock fetch:', thumpsUp);
+    }
     console.log('✅ Inventory fetched successfully with JOIN');
     return NextResponse.json(inventoryWithDetails);
   } catch (error) {

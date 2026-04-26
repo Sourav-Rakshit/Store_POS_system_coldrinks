@@ -19,6 +19,8 @@ interface InventoryState {
   addStock: (skuId: string, quantity: number, type: 'bottles' | 'cartons', batchId?: string, notes?: string) => Promise<void>;
   updateLowStockThreshold: (skuId: string, threshold: number) => Promise<void>;
   removeSku: (skuId: string) => Promise<void>;
+  togglePin: (skuId: string) => Promise<void>;
+  clearStock: (skuId: string) => Promise<void>;
   getInventory: () => SKU[];
   getFilteredInventory: () => SKU[];
   getStockHistory: (skuId?: string) => StockHistoryEntry[];
@@ -170,6 +172,53 @@ export const useInventoryStore = create<InventoryState>()(
           set({ inventory: previousInventory });
           console.error('Error removing SKU:', error);
           throw error;
+        }
+      },
+
+      togglePin: async (skuId) => {
+        const previousInventory = get().inventory;
+        const inventory = [...get().inventory];
+        const index = inventory.findIndex(s => s.id === skuId);
+        
+        if (index !== -1) {
+          const item = inventory[index];
+          inventory[index] = {
+            ...item,
+            isPinned: !item.isPinned,
+            pinnedAt: !item.isPinned ? new Date().toISOString() : null,
+          };
+          set({ inventory });
+          
+          try {
+            await storage.togglePin(skuId);
+          } catch (error) {
+            set({ inventory: previousInventory });
+            console.error('Error toggling pin:', error);
+            throw error;
+          }
+        }
+      },
+
+      clearStock: async (skuId) => {
+        const previousInventory = get().inventory;
+        const inventory = [...get().inventory];
+        const index = inventory.findIndex(s => s.id === skuId);
+        
+        if (index !== -1) {
+          inventory[index] = {
+            ...inventory[index],
+            currentStock: 0,
+            status: 'Out of Stock'
+          };
+          set({ inventory });
+          
+          try {
+            await storage.clearStock(skuId);
+          } catch (error) {
+            set({ inventory: previousInventory });
+            console.error('Error clearing stock:', error);
+            throw error;
+          }
         }
       },
 

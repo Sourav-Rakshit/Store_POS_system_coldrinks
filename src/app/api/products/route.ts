@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products, productSizes, inventory, stockHistory } from '@/lib/db/schema';
+import { ilike } from 'drizzle-orm';
 
 // Helper to generate SKU code
 function generateSKUCode(brand: string, name: string, sizeName: string): string {
@@ -49,6 +50,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+    
+    // Check for duplicate product names (case-insensitive)
+    const [existingProduct] = await db.select().from(products).where(ilike(products.name, name));
+    if (existingProduct) {
+      return NextResponse.json(
+        { error: 'Product with this name already exists' },
+        { status: 409 }
       );
     }
     

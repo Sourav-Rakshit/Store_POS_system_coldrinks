@@ -113,3 +113,21 @@ export function isEmpty(value: unknown): boolean {
   if (typeof value === 'object') return Object.keys(value).length === 0;
   return false;
 }
+
+// Format stock string (e.g. "4 ctn + 26 bot.")
+export function formatStock(totalBottles: number, bottlesPerCarton?: number | null): string {
+  const bpc = bottlesPerCarton || 24;
+  const cartons = Math.floor(totalBottles / bpc);
+  const remaining = totalBottles % bpc;
+
+  if (cartons > 0 && remaining > 0) {
+    return `${cartons} ctn + ${remaining} bot.`;
+  }
+  if (cartons > 0 && remaining === 0) {
+    return `${cartons} ctn`;
+  }
+  if (cartons === 0 && remaining > 0) {
+    return `${remaining} bot.`;
+  }
+  return '0 bot.';
+}

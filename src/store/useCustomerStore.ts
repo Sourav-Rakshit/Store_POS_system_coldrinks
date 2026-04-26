@@ -177,8 +177,8 @@ export const useCustomerStore = create<CustomerState>()(
             method: 'DELETE',
           });
           
-          if (!response.ok) {
-            const error = await response.json();
+          if (!response.ok && response.status !== 404) {
+            const error = await response.json().catch(() => ({}));
             throw new Error(error.error || 'Failed to delete customer');
           }
           

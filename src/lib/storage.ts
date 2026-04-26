@@ -193,7 +193,8 @@ export async function getInventory(forceFresh: boolean = false): Promise<SKU[]> 
   }
   
   try {
-    const inventory = await apiCall<SKU[]>('/inventory');
+    const url = forceFresh ? `/inventory?t=${Date.now()}` : '/inventory';
+    const inventory = await apiCall<SKU[]>(url);
     inventoryCache = inventory;
     cache.setCache('inventory', inventory);
     return inventory;
@@ -333,6 +334,52 @@ export async function deductStock(skuId: string, quantity: number): Promise<bool
   } catch (error) {
     console.error('Error deducting stock:', error);
     return false;
+  }
+}
+
+/**
+ * Toggle pin status for a SKU
+ */
+export async function togglePin(skuId: string): Promise<void> {
+  try {
+    const response = await apiCall<{ isPinned: boolean, pinnedAt: string | null }>(`/inventory/${skuId}/pin`, {
+      method: 'PATCH',
+    });
+    
+    // Update cache
+    const index = inventoryCache.findIndex(s => s.id === skuId);
+    if (index !== -1) {
+      inventoryCache[index].isPinned = response.isPinned;
+      inventoryCache[index].pinnedAt = response.pinnedAt;
+    }
+    
+    cache.invalidateCacheByAction('inventory:update');
+  } catch (error) {
+    console.error('Error toggling pin:', error);
+    throw error;
+  }
+}
+
+/**
+ * Clear stock for a SKU
+ */
+export async function clearStock(skuId: string): Promise<void> {
+  try {
+    await apiCall(`/inventory/${skuId}/clear`, {
+      method: 'PATCH',
+    });
+    
+    // Update cache
+    const index = inventoryCache.findIndex(s => s.id === skuId);
+    if (index !== -1) {
+      inventoryCache[index].currentStock = 0;
+      inventoryCache[index].status = 'Out of Stock';
+    }
+    
+    cache.invalidateCacheByAction('stock:update');
+  } catch (error) {
+    console.error('Error clearing stock:', error);
+    throw error;
   }
 }
 

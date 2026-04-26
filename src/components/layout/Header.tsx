@@ -72,16 +72,15 @@ export function Header() {
             <Menu className="w-5 h-5" />
           </button>
           
-          <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity">
-            <Image
-              src="/logo.svg"
-              alt="Saikat Enterprise"
-              width={150}
-              height={50}
-              priority
-              style={{ objectFit: 'contain' }}
-            />
-          </Link>
+           <Link href="/" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+             <img
+               src="/logo.svg"
+               alt="Saikat Enterprise"
+               width={150}
+               height={50}
+               style={{ objectFit: 'contain' }}
+             />
+           </Link>
         </div>
 
         {/* Right Side */}

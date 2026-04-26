@@ -42,20 +42,20 @@ export function LoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f9fafb]">
       <div className="bg-white rounded-[16px] border border-[#e5e7eb] w-full max-w-[380px] p-[32px_24px] mx-4 shadow-sm">
-        <div style={{ 
-          textAlign: 'center', 
-          marginBottom: '24px',
-          display: 'flex',
-          justifyContent: 'center' 
-        }}>
-          <Image
-            src="/logo.svg"
-            alt="Saikat Enterprise"
-            width={200}
-            height={90}
-            priority
-          />
-        </div>
+         <div style={{ 
+           textAlign: 'center', 
+           marginBottom: '24px',
+           display: 'flex',
+           justifyContent: 'center' 
+         }}>
+           <img
+             src="/logo.svg"
+             alt="Saikat Enterprise"
+             width={200}
+             height={90}
+             style={{ objectFit: 'contain' }}
+           />
+         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col">
           <div className="mb-[14px]">

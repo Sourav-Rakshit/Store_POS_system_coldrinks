@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -78,12 +77,11 @@ export function Sidebar() {
 
         {/* Logo */}
         <div className="flex items-center justify-center mb-10 mt-2">
-          <Image
+          <img
             src="/logo.svg"
             alt="Saikat Enterprise"
             width={200}
             height={80}
-            priority
             style={{ 
               objectFit: 'contain',
               marginBottom: '8px'
@@ -129,12 +127,11 @@ export function Sidebar() {
       <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-slate-200 p-6 sticky top-0 h-screen">
         {/* Logo */}
         <div className="flex items-center justify-center mb-10">
-          <Image
+          <img
             src="/logo.svg"
             alt="Saikat Enterprise"
             width={200}
             height={80}
-            priority
             style={{ 
               objectFit: 'contain',
               marginBottom: '8px'

@@ -17,6 +17,7 @@ export interface Product {
   icon?: string | null; // Icon name: 'Coffee', 'Droplets', 'Zap', 'Droplet', 'Beer'
   image?: string | null;
   sizes: ProductSize[];
+  isPinned?: boolean;
   createdAt: string;
   updatedAt: string;
 }

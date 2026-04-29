@@ -14,12 +14,17 @@ import { Product, SKU, StockStatus } from '@/types';
 import { formatStock } from '@/lib/utils';
 const PRODUCT_ICONS = [
   { name: 'Cola', emoji: '🥤' },
+  { name: 'Mango', emoji: '🥭' },
   { name: 'Lemon', emoji: '🍋' },
+  { name: 'Orange', emoji: '🍊' },
   { name: 'Juice', emoji: '🧃' },
+  { name: 'Jeera', emoji: '🌿' },
+  { name: 'Nimbu', emoji: '🍈' },
+  { name: 'Thumps Up', emoji: '👍' },
   { name: 'Water', emoji: '💧' },
+  { name: 'Bottle', emoji: '🫙' },
   { name: 'Energy', emoji: '⚡' },
   { name: 'Soda', emoji: '🫚' },
-  { name: 'Orange', emoji: '🍊' },
   { name: 'Other', emoji: '📦' },
 ];
 

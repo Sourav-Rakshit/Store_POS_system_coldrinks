@@ -20,27 +20,38 @@ export function CustomerSearchDropdown({
 }: CustomerSearchDropdownProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [localResults, setLocalResults] = useState<CustomerWithStats[]>([]);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  
-  const { searchResults, searchCustomers, initialize, customers } = useCustomerStore();
+  const { initialize, customers } = useCustomerStore();
   
   // Initialize customers on mount
   useEffect(() => {
     initialize();
   }, [initialize]);
   
-  // Debounced search
+  // Priority-based search
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (query.length > 0) {
-        setIsLoading(true);
-        searchCustomers(query).finally(() => setIsLoading(false));
-      }
-    }, 300);
+    if (!query.trim()) {
+      setLocalResults([]);
+      return;
+    }
     
-    return () => clearTimeout(timer);
-  }, [query, searchCustomers]);
+    const q = query.toLowerCase().trim();
+    
+    const startsWith = customers.filter(c =>
+      c.name.toLowerCase().startsWith(q) ||
+      (c.phone && c.phone.startsWith(q))
+    );
+    
+    const contains = customers.filter(c =>
+      !c.name.toLowerCase().startsWith(q) &&
+      !(c.phone && c.phone.startsWith(q)) &&
+      (c.name.toLowerCase().includes(q) ||
+       (c.phone && c.phone.includes(q)))
+    );
+    
+    setLocalResults([...startsWith, ...contains]);
+  }, [query, customers]);
   
   // Close dropdown on outside click
   useEffect(() => {
@@ -123,13 +134,11 @@ export function CustomerSearchDropdown({
         />
       </div>
       
-      {isOpen && (query.length > 0 || searchResults.length > 0) && (
+      {isOpen && (query.length > 0 || localResults.length > 0) && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-auto">
-          {isLoading ? (
-            <div className="p-3 text-center text-sm text-slate-500">Searching...</div>
-          ) : searchResults.length > 0 ? (
+          {localResults.length > 0 ? (
             <>
-              {searchResults.map((customer) => (
+              {localResults.map((customer) => (
                 <button
                   key={customer.id}
                   onClick={() => handleSelect(customer)}
@@ -147,9 +156,9 @@ export function CustomerSearchDropdown({
                 </button>
               ))}
               
-              {onAddNew && query.length > 0 && !searchResults.some(
+              {onAddNew && query.length > 0 && !localResults.some(
                 c => c.name.toLowerCase().includes(query.toLowerCase()) ||
-                     c.phone?.includes(query)
+                     (c.phone && c.phone.includes(query))
               ) && (
                 <button
                   onClick={() => {

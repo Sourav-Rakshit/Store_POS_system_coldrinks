@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products, productSizes, inventory, stockHistory } from '@/lib/db/schema';
-import { ilike } from 'drizzle-orm';
+import { ilike, desc, asc } from 'drizzle-orm';
 
 // Helper to generate SKU code
 function generateSKUCode(brand: string, name: string, sizeName: string): string {
@@ -14,7 +14,9 @@ function generateSKUCode(brand: string, name: string, sizeName: string): string 
 
 export async function GET() {
   try {
-    const allProducts = await db.select().from(products);
+    const allProducts = await db.select()
+      .from(products)
+      .orderBy(desc(products.isPinned), asc(products.name));
     
     // Get sizes for all products - fetch all sizes
     const allSizes = await db.select().from(productSizes);

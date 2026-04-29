@@ -106,26 +106,29 @@ export async function POST(request: Request) {
     // Determine bill status based on payment
     const cashReceivedNum = cashReceived ? parseFloat(cashReceived) : 0;
     const totalAmountNum = parseFloat(totalAmount) || 0;
+    const roundedTotal = Math.round(totalAmountNum);
+    const dueAmount = roundedTotal - cashReceivedNum;
+    
     let billStatus: 'paid' | 'partially_paid' | 'pending' = 'paid';
     let outstandingBalance = 0;
     
     // Handle payment status calculation
-    if (cashReceivedNum >= totalAmountNum) {
+    if (dueAmount <= 0) {
       // Fully paid
       billStatus = 'paid';
       outstandingBalance = 0;
-    } else if (cashReceivedNum > 0) {
+    } else if (dueAmount > 0 && cashReceivedNum > 0) {
       // Partially paid (regardless of payment mode)
       billStatus = 'partially_paid';
-      outstandingBalance = totalAmountNum - cashReceivedNum;
+      outstandingBalance = dueAmount;
     } else if (paymentMode === 'Credit') {
       // No payment and Credit mode = full due
       billStatus = 'pending';
-      outstandingBalance = totalAmountNum;
+      outstandingBalance = dueAmount;
     } else {
       // No payment and non-Credit mode
       billStatus = 'pending';
-      outstandingBalance = totalAmountNum;
+      outstandingBalance = dueAmount;
     }
     
     const [newBill] = await db.insert(bills).values({
@@ -285,14 +288,14 @@ export async function POST(request: Request) {
               newOutstanding = currentOutstanding + outstandingBalance;
             } else if (paymentMode === 'Credit') {
               // Full credit - add full amount to outstanding
-              newOutstanding = currentOutstanding + totalAmountNum;
+              newOutstanding = currentOutstanding + roundedTotal;
             } else if (cashReceivedNum > 0) {
               // Partial payment - add outstanding balance
               newOutstanding = currentOutstanding + outstandingBalance;
               newTotalPaid = currentTotalPaid + cashReceivedNum;
             } else {
               // No payment made - full outstanding
-              newOutstanding = currentOutstanding + totalAmountNum;
+              newOutstanding = currentOutstanding + roundedTotal;
             }
             
             // Update customer stats

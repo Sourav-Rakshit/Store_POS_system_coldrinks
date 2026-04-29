@@ -1,213 +1,250 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Loader2, DollarSign, CreditCard } from 'lucide-react';
-import { useCustomerStore } from '@/store/useCustomerStore';
+import { useState } from 'react';
+import { X, Loader2, Minus, Plus, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/components/Toast';
-import { PaymentMode } from '@/types';
+import { PaymentMode, Bill } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 interface ManageDueModalProps {
   customerId: string;
   currentBalance: number;
   customerName: string;
+  dueBills: Bill[];
   onClose: () => void;
   onSuccess: () => void;
 }
-
-type Tab = 'payment' | 'due';
 
 export function ManageDueModal({
   customerId,
   currentBalance,
   customerName,
+  dueBills,
   onClose,
   onSuccess,
 }: ManageDueModalProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('payment');
-  const [amount, setAmount] = useState('');
+  const [selectedBill, setSelectedBill] = useState<Bill | 'all' | null>(null);
+  const [amount, setAmount] = useState<string>('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Cash');
-  const [note, setNote] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   
-  const { recordPayment } = useCustomerStore();
   const { addToast } = useToast();
   
-  const amountNum = parseFloat(amount) || 0;
+  const billsToPay = dueBills.filter(b => (b.outstandingAmount || 0) > 0);
+  const totalOutstanding = billsToPay.reduce((sum, b) => sum + (b.outstandingAmount || 0), 0);
   
-  // Calculate new balance based on tab
-  const newBalance = activeTab === 'payment' 
-    ? Math.max(0, currentBalance - amountNum)
-    : currentBalance + amountNum;
+  const handleSelectBill = (bill: Bill) => {
+    setSelectedBill(bill);
+    setAmount((bill.outstandingAmount || 0).toString());
+  };
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (amountNum <= 0) {
-      setError('Please enter a valid amount');
-      return;
-    }
-    
-    if (activeTab === 'payment' && amountNum > currentBalance) {
-      setError('Payment amount cannot exceed outstanding balance');
+  const handlePayAll = () => {
+    setSelectedBill('all');
+    setAmount(totalOutstanding.toString());
+  };
+
+  const handleConfirm = async () => {
+    const payAmount = parseFloat(amount);
+    if (isNaN(payAmount) || payAmount <= 0) {
+      addToast('error', 'Please enter a valid amount');
       return;
     }
     
     setIsLoading(true);
     try {
-      await recordPayment(customerId, {
-        amount: amountNum,
-        paymentMode,
-        type: activeTab === 'payment' ? 'payment' : 'credit',
-        note: note.trim() || undefined,
-      });
+      if (selectedBill === 'all') {
+        let remaining = payAmount;
+        const sortedBills = [...billsToPay].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
+        for (const bill of sortedBills) {
+          if (remaining <= 0) break;
+          const billDue = bill.outstandingAmount || 0;
+          const payForBill = Math.min(billDue, remaining);
+          
+          await fetch(`/api/bills/${bill.id}/payment`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: payForBill,
+              paymentMode,
+              customerId
+            })
+          });
+          remaining -= payForBill;
+        }
+      } else if (selectedBill) {
+        await fetch(`/api/bills/${selectedBill.id}/payment`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: payAmount,
+            paymentMode,
+            customerId
+          })
+        });
+      }
       
-      addToast('success', activeTab === 'payment' ? 'Payment recorded successfully' : 'Due added successfully');
+      addToast('success', `Payment of ${formatCurrency(payAmount)} recorded for ${customerName}`);
+      
+      setSelectedBill(null);
+      
+      if (payAmount >= totalOutstanding) {
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }
+      
       onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to process');
+    } catch (error) {
+      console.error(error);
+      addToast('error', 'Failed to record payment');
     } finally {
       setIsLoading(false);
     }
   };
-  
+
+  const currentDueAmount = selectedBill === 'all' 
+    ? totalOutstanding 
+    : (selectedBill?.outstandingAmount || 0);
+
+  const amountNum = parseFloat(amount) || 0;
+  const isPaidFull = amountNum >= currentDueAmount;
+  const remainingDue = Math.max(0, currentDueAmount - amountNum);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative bg-white rounded-t-[20px] sm:rounded-xl shadow-xl w-full max-w-md mx-auto max-h-[90vh] overflow-hidden flex flex-col animate-slide-up sm:animate-none">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-white">
           <div>
-            <h2 className="text-lg font-bold">Manage Due</h2>
-            <p className="text-sm text-slate-500">{customerName}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-slate-100 rounded-lg"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
-        {/* Tabs */}
-        <div className="flex border-b border-slate-200">
-          <button
-            onClick={() => setActiveTab('payment')}
-            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
-              activeTab === 'payment'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-500'
-            }`}
-          >
-            <DollarSign className="w-4 h-4" />
-            Record Payment
-          </button>
-          <button
-            onClick={() => setActiveTab('due')}
-            className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-2 ${
-              activeTab === 'due'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-slate-500'
-            }`}
-          >
-            <CreditCard className="w-4 h-4" />
-            Add Due
-          </button>
-        </div>
-        
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg">
-              {error}
-            </div>
-          )}
-          
-          {/* Current Balance */}
-          <div className="bg-slate-50 rounded-lg p-4 text-center">
-            <p className="text-xs text-slate-500 mb-1">Current Outstanding Balance</p>
-            <p className="text-2xl font-bold text-amber-600">
-              {formatCurrency(currentBalance)}
+            <h2 className="text-lg font-bold">Manage Due — {customerName}</h2>
+            <p className={`text-sm font-semibold ${totalOutstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              Outstanding: {formatCurrency(totalOutstanding)}
             </p>
           </div>
-          
-          {/* Amount */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Amount <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-              step="0.01"
-              min="0"
-              autoFocus
-            />
-            {amountNum > 0 && (
-              <div className="mt-2 p-2 bg-slate-50 rounded text-sm">
-                <p className="text-slate-500">New Balance After:</p>
-                <p className={`font-bold ${newBalance > currentBalance ? 'text-red-600' : 'text-green-600'}`}>
-                  {formatCurrency(newBalance)}
-                </p>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto bg-slate-50 p-4">
+          {!selectedBill ? (
+            <div className="space-y-3">
+              {billsToPay.map(bill => (
+                <div 
+                  key={bill.id} 
+                  onClick={() => handleSelectBill(bill)}
+                  className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-[#16a34a] hover:shadow-sm transition-all"
+                >
+                  <div>
+                    <p className="font-semibold text-sm">{bill.invoiceNumber}</p>
+                    <p className="text-xs text-slate-500">{new Date(bill.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p>
+                  </div>
+                  <p className="font-bold text-red-600">{formatCurrency(bill.outstandingAmount || 0)}</p>
+                </div>
+              ))}
+              
+              {billsToPay.length === 0 && (
+                <div className="py-8 text-center text-green-600 font-bold">
+                  All dues cleared! 🎉
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100">
+                <span className="font-semibold text-slate-700">
+                  {selectedBill === 'all' ? 'Paying All Dues' : `Paying: ${selectedBill.invoiceNumber}`}
+                </span>
+                <span className="font-bold text-red-600">Due: {formatCurrency(currentDueAmount)}</span>
               </div>
-            )}
-          </div>
-          
-          {/* Payment Mode */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Payment Mode
-            </label>
-            <select
-              value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-            >
-              <option value="Cash">Cash</option>
-              <option value="UPI">UPI</option>
-              <option value="Card">Card</option>
-            </select>
-          </div>
-          
-          {/* Note */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {activeTab === 'payment' ? 'Note (optional)' : 'Reason (optional)'}
-            </label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={activeTab === 'payment' ? 'Add a note...' : 'e.g., Previous balance, Adjustment'}
-              className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm"
-              rows={2}
-            />
-          </div>
-          
-          {/* Buttons */}
-          <div className="flex gap-3 pt-2">
+              
+              <div className="flex items-center justify-center mb-8">
+                <div className="flex items-center border-2 border-slate-200 rounded-xl overflow-hidden bg-white">
+                  <button 
+                    onClick={() => setAmount(Math.max(0, amountNum - 100).toString())}
+                    className="px-5 py-4 hover:bg-slate-100 text-slate-500 border-r border-slate-200"
+                  >
+                    <Minus className="w-6 h-6" />
+                  </button>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-28 text-center font-bold text-2xl outline-none"
+                    min="0"
+                  />
+                  <button 
+                    onClick={() => setAmount((amountNum + 100).toString())}
+                    className="px-5 py-4 hover:bg-slate-100 text-slate-500 border-l border-slate-200"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mb-8">
+                <button
+                  onClick={() => setPaymentMode('Cash')}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors ${
+                    paymentMode === 'Cash' ? 'border-[#16a34a] bg-[#f0fdf4] text-[#16a34a]' : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  CASH
+                </button>
+                <button
+                  onClick={() => setPaymentMode('UPI')}
+                  className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-colors ${
+                    paymentMode === 'UPI' ? 'border-[#16a34a] bg-[#f0fdf4] text-[#16a34a]' : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  UPI
+                </button>
+              </div>
+              
+              <div className={`p-4 rounded-xl mb-6 flex items-center justify-center gap-2 ${
+                isPaidFull ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+              }`}>
+                {isPaidFull ? <CheckCircle className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
+                <span className="text-[15px] font-medium">
+                  Status: {isPaidFull ? '✓ Will be marked PAID' : `Partial — ${formatCurrency(remainingDue)} still due`}
+                </span>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedBill(null)}
+                  className="px-5 py-4 border-2 border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isLoading || amountNum <= 0}
+                  className="flex-1 py-4 bg-[#16a34a] text-white rounded-xl font-bold text-[15px] hover:bg-green-700 disabled:opacity-50 flex justify-center items-center gap-2 shadow-sm"
+                >
+                  {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
+                  Confirm Payment
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer for Pay All */}
+        {!selectedBill && billsToPay.length > 0 && (
+          <div className="p-4 bg-white border-t border-slate-200">
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50"
+              onClick={handlePayAll}
+              className="w-full h-[52px] bg-[#16a34a] text-white rounded-xl font-bold text-[16px] hover:bg-green-700 shadow-sm"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || amountNum <= 0}
-              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {activeTab === 'payment' ? 'Record Payment' : 'Add Due'}
+              Pay All ({formatCurrency(totalOutstanding)})
             </button>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

@@ -73,8 +73,10 @@ export function ThermalReceipt({
 
   // Calculate totals
   const itemTotal = mappedItems.reduce((sum, item) => sum + Number(item.totalPrice || 0), 0);
-  const roundOff = Math.round(itemTotal) - itemTotal;
-  const roundedTotal = Math.round(itemTotal);
+  const discountAmount = Number(bill.discountAmount) || 0;
+  const totalAfterDiscount = itemTotal - discountAmount;
+  const roundOff = Math.round(totalAfterDiscount) - totalAfterDiscount;
+  const roundedTotal = Math.round(totalAfterDiscount);
   const paidAmount = Number(bill.cashReceived) || 0;
   const dueAmount = roundedTotal - paidAmount - refundAmount;
   // ✅ Fix: change = cashReceived - roundedTotal (positive means change given back)
@@ -291,6 +293,12 @@ export function ThermalReceipt({
           <span>Sub Total</span>
           <span>₹{itemTotal.toFixed(2)}</span>
         </div>
+        {discountAmount > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0', color: '#cc0000' }}>
+            <span>Discount</span>
+            <span>-₹{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         {roundOff !== 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
             <span>Round Off</span>

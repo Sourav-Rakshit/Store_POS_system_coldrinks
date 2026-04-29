@@ -213,55 +213,42 @@ export function BillSuccessModal({
 
           {/* Action Buttons */}
           <div className="bg-white p-4 pb-[88px] lg:pb-6 border-t border-[#f3f4f6] lg:border-none shrink-0 rounded-t-[16px] lg:rounded-none">
-            {/* Download JPG - Primary */}
+            {/* Download JPG - White style */}
             <button
               onClick={handleDownload}
               disabled={isAnyLoading}
-              className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-[#16a34a] lg:bg-green-600 hover:bg-[#15803d] disabled:bg-[#86efac] text-white rounded-[10px] lg:rounded-xl font-semibold text-[15px] lg:text-base transition-colors mb-2.5 lg:mb-3"
+              className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border-[1.5px] border-[#16a34a] hover:bg-green-50 disabled:opacity-50 text-[#16a34a] rounded-[10px] lg:rounded-xl font-semibold text-[15px] lg:text-base transition-colors mb-2.5 lg:mb-3"
             >
               {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
               Download JPG
             </button>
 
-            {/* Share and WhatsApp Row */}
+            {/* Share/Print and WhatsApp Row */}
             <div className="flex gap-2.5 mb-2.5 lg:mb-3 lg:grid lg:grid-cols-2">
               <button
                 onClick={handleShare}
                 disabled={isAnyLoading}
-                className="flex-1 h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] lg:border-2 lg:border-slate-200 hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
+                className="flex-1 h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 text-white rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
               >
-                {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-4 h-4" />}
-                Share
+                {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-4 h-4" />}
+                Print
               </button>
 
               <button
                 onClick={handleWhatsApp}
                 disabled={isAnyLoading}
-                className="flex-1 h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border border-[#25d366] lg:border-2 lg:border-green-600 hover:bg-[#f0fdf4] disabled:opacity-50 text-[#25d366] rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
+                className="flex-1 h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border-[1.5px] border-[#16a34a] hover:bg-[#f0fdf4] disabled:opacity-50 text-[#16a34a] rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
               >
                 {isWhatsapping ? <Loader2 className="w-5 h-5 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
                 WhatsApp
               </button>
             </div>
 
-             {/* TinyPrint Button */}
-            <button
-              onClick={() => {
-                openTinyPrintApp();
-                handleTinyPrint();
-              }}
-              disabled={isAnyLoading}
-              className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border border-[#e5e7eb] lg:border-2 lg:border-slate-200 hover:bg-slate-50 disabled:opacity-50 text-[#374151] rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors mb-2.5 lg:mb-3"
-            >
-              {isTinyPrint ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-4 h-4" />}
-              Print
-            </button>
-
             {/* New Bill - Ghost */}
             <button
               onClick={handleNewBill}
               disabled={isAnyLoading}
-              className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-[#f9fafb] lg:bg-transparent lg:hover:bg-slate-100 border border-[#e5e7eb] lg:border-none disabled:opacity-50 text-[#374151] lg:text-slate-500 rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
+              className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white lg:bg-transparent lg:hover:bg-slate-100 border border-[#e5e7eb] disabled:opacity-50 text-[#374151] lg:text-slate-500 rounded-[10px] lg:rounded-xl font-semibold text-[14px] transition-colors"
             >
               <X className="w-4 h-4" />
               New Bill

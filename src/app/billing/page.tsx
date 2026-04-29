@@ -11,7 +11,7 @@ import { useToast } from '@/components/Toast';
 import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { validateStock } from '@/lib/validateStock';
 import { formatCurrency, formatStock } from '@/lib/utils';
-import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu } from 'lucide-react';
+import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu, Pin } from 'lucide-react';
 import { Product, ProductSize, BillItem, StoreSettings, CustomerWithStats, PaymentMode } from '@/types';
 import { BillSuccessModal } from '@/components/billing/BillSuccessModal';
 import { CustomerSearchDropdown } from '@/components/customers/CustomerSearchDropdown';
@@ -53,7 +53,7 @@ export default function BillingPage() {
   const [selectedBillingCategory, setSelectedBillingCategory] = useState<string>('Soft Drinks');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null);
-  const [packaging, setPackaging] = useState<'bottle' | 'carton'>('bottle');
+  const [packaging, setPackaging] = useState<'bottle' | 'carton'>('carton');
   const [quantity, setQuantity] = useState(1);
 
   // Mobile packaging modal state
@@ -62,7 +62,7 @@ export default function BillingPage() {
     size: ProductSize;
   } | null>(null);
   const [packagingQty, setPackagingQty] = useState(1);
-  const [packagingType, setPackagingType] = useState<'bottle' | 'carton'>('bottle');
+  const [packagingType, setPackagingType] = useState<'bottle' | 'carton'>('carton');
   
   // Customer state
   const [customerName, setCustomerName] = useState('');
@@ -224,7 +224,7 @@ export default function BillingPage() {
   const handleSizeClickMobile = (product: Product, size: ProductSize) => {
     setPackagingModal({ product, size });
     setPackagingQty(1);
-    setPackagingType('bottle');
+    setPackagingType('carton');
   };
 
   // Add item from configurator (desktop)
@@ -251,7 +251,23 @@ export default function BillingPage() {
     setSelectedProduct(null);
     setSelectedSize(null);
     setQuantity(1);
-    setPackaging('bottle');
+    setPackaging('carton');
+  };
+
+  const togglePin = async (productId: string, isPinned: boolean) => {
+    try {
+      const response = await fetch(`/api/products/${productId}/pin`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPinned })
+      });
+      if (!response.ok) throw new Error('Failed to update pin');
+      await refreshProducts();
+      addToast('success', isPinned ? 'Pinned to top' : 'Unpinned');
+    } catch (error) {
+      console.error(error);
+      addToast('error', 'Failed to update pin state');
+    }
   };
 
   // Calculate totals
@@ -272,6 +288,7 @@ export default function BillingPage() {
 
   // Determine bill status based on payment mode
   const getBillStatus = () => {
+    const roundedTotal = Math.round(total);
     if (billingMode === 'order') {
       if (orderPaymentMode === 'full_paid') return 'paid';
       if (orderPaymentMode === 'full_due') return 'pending';
@@ -279,7 +296,7 @@ export default function BillingPage() {
     } else {
       // SALE mode
       if (salePaymentMode === 'cash') {
-        if (cashReceived >= total) return 'paid';
+        if (cashReceived >= roundedTotal) return 'paid';
         if (cashReceived > 0) return 'partially_paid';
         return 'pending';
       }
@@ -319,6 +336,18 @@ export default function BillingPage() {
   const handleSubmitBill = async () => {
     if (currentBill.items.length === 0) {
       addToast('error', 'No items in bill');
+      return;
+    }
+
+    const roundedTotal = Math.round(total);
+    const apiCashReceived = getCashReceivedForAPI();
+    const dueAmount = Math.max(0, roundedTotal - apiCashReceived);
+    const hasCustomer = !!selectedCustomer;
+    const isFullyPaid = dueAmount <= 0;
+    const canGenerateBill = hasCustomer || isFullyPaid;
+
+    if (!canGenerateBill) {
+      addToast('error', 'Please add customer details for due or partial payments');
       return;
     }
 
@@ -476,21 +505,22 @@ export default function BillingPage() {
 
   // Get status display text
   const getStatusText = () => {
+    const roundedTotal = Math.round(total);
     if (billingMode === 'order') {
       if (orderPaymentMode === 'full_paid') return 'Full Paid';
       if (orderPaymentMode === 'full_due') return 'Full Due';
       return `Advance: ${formatCurrency(advanceAmount)}`;
     } else {
       if (salePaymentMode === 'cash') {
-        if (cashReceived >= total) return 'Full Paid';
-        if (cashReceived > 0) return `Partial: ${formatCurrency(cashReceived)}, Due: ${formatCurrency(total - cashReceived)}`;
+        if (cashReceived >= roundedTotal) return 'Full Paid';
+        if (cashReceived > 0) return `Partial: ${formatCurrency(cashReceived)}, Due: ${formatCurrency(roundedTotal - cashReceived)}`;
         return 'Full Due';
       }
       if (salePaymentMode === 'upi') return 'Full Paid (UPI)';
       // Due mode with partial payment
       if (salePaymentMode === 'due') {
-        if (duePartialPayment >= total) return 'Full Paid';
-        if (duePartialPayment > 0) return `Partial: ${formatCurrency(duePartialPayment)}, Due: ${formatCurrency(total - duePartialPayment)}`;
+        if (duePartialPayment >= roundedTotal) return 'Full Paid';
+        if (duePartialPayment > 0) return `Partial: ${formatCurrency(duePartialPayment)}, Due: ${formatCurrency(roundedTotal - duePartialPayment)}`;
         return 'Full Due';
       }
       return 'Full Due';
@@ -499,20 +529,21 @@ export default function BillingPage() {
 
   // Get status color
   const getStatusColor = () => {
+    const roundedTotal = Math.round(total);
     if (billingMode === 'order') {
       if (orderPaymentMode === 'full_paid') return 'text-green-600 bg-green-50';
       if (orderPaymentMode === 'full_due') return 'text-red-600 bg-red-50';
       return 'text-amber-600 bg-amber-50';
     } else {
       if (salePaymentMode === 'cash') {
-        if (cashReceived >= total) return 'text-green-600 bg-green-50';
+        if (cashReceived >= roundedTotal) return 'text-green-600 bg-green-50';
         if (cashReceived > 0) return 'text-amber-600 bg-amber-50';
         return 'text-red-600 bg-red-50';
       }
       if (salePaymentMode === 'upi') return 'text-green-600 bg-green-50';
       // Due mode with partial payment
       if (salePaymentMode === 'due') {
-        if (duePartialPayment >= total) return 'text-green-600 bg-green-50';
+        if (duePartialPayment >= roundedTotal) return 'text-green-600 bg-green-50';
         if (duePartialPayment > 0) return 'text-amber-600 bg-amber-50';
         return 'text-red-600 bg-red-50';
       }
@@ -704,8 +735,22 @@ export default function BillingPage() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-[14px]">{product.name}</h4>
-                        <p className="hidden lg:block text-xs text-slate-500 mb-2">{product.brand}</p>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-semibold text-[14px]">{product.name}</h4>
+                            <p className="hidden lg:block text-xs text-slate-500 mb-2">{product.brand}</p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePin(product.id, !product.isPinned);
+                            }}
+                            className="p-1 hover:bg-slate-100 rounded"
+                            title={product.isPinned ? "Unpin" : "Pin to top"}
+                          >
+                            <Pin className={`w-[14px] h-[14px] ${product.isPinned ? 'text-[#16a34a] fill-[#16a34a]' : 'text-[#9ca3af]'}`} />
+                          </button>
+                        </div>
                         {/* Size badges - click to add directly */}
                         <div className="flex flex-wrap gap-[6px] mt-2 lg:mt-0">
                           {product.sizes.map(size => (
@@ -779,8 +824,8 @@ export default function BillingPage() {
                       onChange={(e) => setPackaging(e.target.value as 'bottle' | 'carton')}
                       className="w-full bg-white border border-slate-200 rounded-lg text-sm p-2"
                     >
-                      <option value="bottle">Bottle</option>
                       <option value="carton">Carton ({selectedSize.bottlesPerCarton} pcs)</option>
+                      <option value="bottle">Bottle</option>
                     </select>
                   </div>
                 </div>
@@ -976,10 +1021,10 @@ export default function BillingPage() {
                     
                     {cashReceived > 0 && (
                       <>
-                        {cashReceived >= total ? (
+                        {cashReceived >= Math.round(total) ? (
                           <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center justify-between">
                             <span className="text-green-700 text-sm font-medium">Change Amount:</span>
-                            <span className="text-green-700 text-sm font-bold">{formatCurrency(cashReceived - total)}</span>
+                            <span className="text-green-700 text-sm font-bold">{formatCurrency(cashReceived - Math.round(total))}</span>
                           </div>
                         ) : (
                           <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
@@ -988,7 +1033,7 @@ export default function BillingPage() {
                               Partial Payment
                             </p>
                             <p className="text-amber-600 text-xs mt-1">
-                              Received: {formatCurrency(cashReceived)} | Outstanding: {formatCurrency(total - cashReceived)}
+                              Received: {formatCurrency(cashReceived)} | Outstanding: {formatCurrency(Math.round(total) - cashReceived)}
                             </p>
                           </div>
                         )}
@@ -1092,17 +1137,36 @@ export default function BillingPage() {
             </div>
 
             {/* Submit Button */}
-            <button
-              onClick={handleSubmitBill}
-              disabled={isSubmitting || currentBill.items.length === 0}
-              className={`w-full mt-4 h-[48px] rounded-[12px] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all sticky bottom-[72px] lg:static lg:bottom-auto z-40 ${
-                billingMode === 'order' 
-                  ? 'bg-amber-500 hover:bg-amber-600 disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
-                  : 'bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
-              }`}
-            >
-              🖨 Generate Bill
-            </button>
+            {(() => {
+              const roundedTotal = Math.round(total);
+              const apiCashReceived = getCashReceivedForAPI();
+              const dueAmount = Math.max(0, roundedTotal - apiCashReceived);
+              const hasCustomer = !!selectedCustomer;
+              const isFullyPaid = dueAmount <= 0;
+              const canGenerateBill = hasCustomer || isFullyPaid;
+
+              return (
+                <div className="sticky bottom-[72px] lg:static lg:bottom-auto z-40 mt-4 bg-white/80 lg:bg-transparent backdrop-blur-sm lg:backdrop-blur-none p-1 lg:p-0">
+                  <button
+                    onClick={handleSubmitBill}
+                    disabled={isSubmitting || currentBill.items.length === 0 || (!canGenerateBill)}
+                    className={`w-full h-[48px] rounded-[12px] font-semibold text-[15px] flex items-center justify-center gap-2 transition-all ${
+                      billingMode === 'order' 
+                        ? 'bg-amber-500 hover:bg-amber-600 disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
+                        : 'bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#d1d5db] text-white disabled:text-slate-500 shadow-lg lg:shadow-none'
+                    }`}
+                    style={(!canGenerateBill) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  >
+                    🖨 Generate Bill
+                  </button>
+                  {!canGenerateBill && (
+                    <p className="text-[#f59e0b] text-[12px] text-center mt-2 font-medium">
+                      ⚠ Add customer details for due/partial payments
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1186,19 +1250,6 @@ export default function BillingPage() {
 
             <div className="flex gap-3 mb-6">
               <button
-                onClick={() => setPackagingType('bottle')}
-                className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${
-                  packagingType === 'bottle'
-                    ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
-                    : 'border-2 border-[#e5e7eb] bg-white'
-                }`}
-              >
-                <span className="text-[20px]">🍾</span>
-                <span className="text-[14px] font-semibold text-slate-800">Bottles</span>
-                <span className="text-[12px] text-slate-500">₹{packagingModal.size.pricePerBottle} each</span>
-              </button>
-              
-              <button
                 onClick={() => setPackagingType('carton')}
                 className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${
                   packagingType === 'carton'
@@ -1212,6 +1263,19 @@ export default function BillingPage() {
                   ₹{packagingModal.size.pricePerCarton}
                   {packagingModal.size.bottlesPerCarton ? ` (${packagingModal.size.bottlesPerCarton} pcs)` : ''}
                 </span>
+              </button>
+              
+              <button
+                onClick={() => setPackagingType('bottle')}
+                className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${
+                  packagingType === 'bottle'
+                    ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
+                    : 'border-2 border-[#e5e7eb] bg-white'
+                }`}
+              >
+                <span className="text-[20px]">🍾</span>
+                <span className="text-[14px] font-semibold text-slate-800">Bottles</span>
+                <span className="text-[12px] text-slate-500">₹{packagingModal.size.pricePerBottle} each</span>
               </button>
             </div>
 

@@ -26,6 +26,7 @@ export const products = pgTable('products', {
   brand: varchar('brand', { length: 255 }).notNull(),
   category: varchar('category', { length: 50 }).notNull(),
   imageUrl: text('image_url'),
+  isPinned: boolean('is_pinned').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });

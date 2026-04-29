@@ -80,8 +80,9 @@ export function CustomerDetailModal({
     has_balance: 'text-amber-600',
   }[balanceStatus];
   
-  const handlePaymentRecorded = () => {
-    fetchCustomerData();
+  const handlePaymentRecorded = async () => {
+    await fetchCustomerData();
+    if (onUpdate) await onUpdate(customer.id, customerData);
     setShowManageDue(false);
   };
   
@@ -534,6 +535,7 @@ export function CustomerDetailModal({
           customerId={customerData.id}
           currentBalance={customerData.outstandingBalance}
           customerName={customerData.name}
+          dueBills={bills.filter(b => b.status === 'pending' || b.status === 'partially_paid')}
           onClose={() => setShowManageDue(false)}
           onSuccess={handlePaymentRecorded}
         />

@@ -2,6 +2,7 @@
 
 import { Bell, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
 
 interface TopBarProps {
   title?: string;
@@ -9,6 +10,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, showNewBill = true }: TopBarProps) {
+  const { addToast } = useToast();
   return (
     <header className="flex items-center justify-between mb-8">
       <div>
@@ -17,7 +19,11 @@ export function TopBar({ title, showNewBill = true }: TopBarProps) {
       </div>
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors relative">
+        <button 
+          onClick={() => addToast('info', 'No new notifications')}
+          className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors relative"
+          style={{ cursor: 'pointer', zIndex: 10 }}
+        >
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
         </button>

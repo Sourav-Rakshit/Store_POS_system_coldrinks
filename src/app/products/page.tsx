@@ -9,6 +9,7 @@ import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { formatCurrency } from '@/lib/utils';
 import { Search, Plus, Edit, Trash2, Package, Menu } from 'lucide-react';
 import { Product, ProductCategory, ProductSize } from '@/types';
+import { MobileAvatar } from '@/components/layout/MobileAvatar';
 
 const PRODUCT_ICONS = [
   { name: 'Cola', emoji: '🥤' },
@@ -32,12 +33,12 @@ const categories: ProductCategory[] = ['All', 'Soft Drinks', 'Juices', 'Energy D
 
 export default function ProductsPage() {
   const router = useRouter();
-  const { 
-    products, 
-    searchQuery, 
+  const {
+    products,
+    searchQuery,
     selectedCategory,
-    setSearchQuery, 
-    setSelectedCategory, 
+    setSearchQuery,
+    setSelectedCategory,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -47,7 +48,7 @@ export default function ProductsPage() {
   } = useProductStore();
   const { forceRefresh: refreshInventory } = useInventoryStore();
   const { addToast } = useToast();
-  
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,7 +72,7 @@ export default function ProductsPage() {
   const handleProductsRefetch = useCallback(() => {
     return refreshProducts();
   }, [refreshProducts]);
-  
+
   useRefetchOnFocus({
     onRefetch: handleProductsRefetch,
     staleTime: 60000, // 60 seconds
@@ -147,7 +148,7 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return;
 
     if (!formData.name || !formData.brand || formData.sizes.length === 0) {
@@ -216,19 +217,16 @@ export default function ProductsPage() {
             <h1 className="text-xl md:text-2xl md:text-3xl font-bold leading-tight">
               Products
             </h1>
-            <p className="hidden md:block text-slate-500 text-sm">Manage your cold drink products and pricing.</p>
+            <p className="hidden md:block text-slate-500 text-sm">Manage cold drink products and pricing</p>
           </div>
 
-          {/* Mobile Avatar (using fixed initial or settings link) */}
-          <button
-            onClick={() => router.push('/settings')}
-            className="size-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm hover:bg-primary/20 transition-colors shrink-0 md:hidden"
-          >
-            A
-          </button>
+          {/* Mobile Avatar */}
+          <div className="md:hidden shrink-0">
+            <MobileAvatar />
+          </div>
         </div>
-        <p className="text-xs text-slate-500 leading-snug text-center w-full truncate md:hidden">Manage your cold drink products and pricing</p>
-        
+        <p className="text-xs text-slate-500 leading-snug text-center w-full truncate md:hidden">Manage cold drink products and pricing</p>
+
         {/* Desktop Add Button */}
         <button
           onClick={handleOpenAddModal}
@@ -254,7 +252,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Category Tabs */}
-      <div 
+      <div
         className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar whitespace-nowrap"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
@@ -262,11 +260,10 @@ export default function ProductsPage() {
           <button
             key={category}
             onClick={() => setSelectedCategory(category)}
-            className={`flex-shrink-0 px-[14px] py-[6px] rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
-              selectedCategory === category
-                ? 'bg-primary text-white'
-                : 'bg-white bg-slate-800 border border-slate-200 border-slate-700 text-slate-600 text-slate-300 hover:border-primary'
-            }`}
+            className={`flex-shrink-0 px-[14px] py-[6px] rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${selectedCategory === category
+              ? 'bg-primary text-white'
+              : 'bg-white bg-slate-800 border border-slate-200 border-slate-700 text-slate-600 text-slate-300 hover:border-primary'
+              }`}
           >
             {category}
           </button>
@@ -369,7 +366,7 @@ export default function ProductsPage() {
           <div className="bg-white w-full max-w-lg rounded-t-[20px] md:rounded-2xl pt-[20px] px-[16px] pb-[32px] md:p-0 shadow-2xl max-h-[90vh] flex flex-col mt-auto md:mt-0">
             {/* Drag Handle (Mobile) */}
             <div className="w-[40px] h-[4px] bg-[#e5e7eb] rounded-sm mx-auto mb-4 md:hidden" />
-            
+
             <div className="md:p-6 md:border-b md:border-slate-100 flex justify-between items-center flex-shrink-0 mb-[14px] md:mb-0">
               <h2 className="text-[17px] font-semibold md:text-lg md:font-semibold text-slate-900">
                 {editingProduct ? 'Edit Product' : 'Add New Product'}
@@ -381,7 +378,7 @@ export default function ProductsPage() {
                 ✕
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="md:p-6 space-y-5 overflow-y-auto flex-1">
               {/* Icon Selection */}
               <div>
@@ -394,11 +391,10 @@ export default function ProductsPage() {
                         key={option.name}
                         type="button"
                         onClick={() => handleIconChange(option.name === 'Other' ? null : option.name)}
-                        className={`w-full md:w-14 h-[52px] md:h-14 rounded-[12px] border-[1.5px] md:border-2 flex flex-col md:flex-row items-center justify-center transition-all ${
-                          isSelected
-                            ? 'border-[#16a34a] bg-[#f0fdf4]'
-                            : 'border-[#e5e7eb] bg-white md:bg-slate-50 hover:border-primary/50'
-                        }`}
+                        className={`w-full md:w-14 h-[52px] md:h-14 rounded-[12px] border-[1.5px] md:border-2 flex flex-col md:flex-row items-center justify-center transition-all ${isSelected
+                          ? 'border-[#16a34a] bg-[#f0fdf4]'
+                          : 'border-[#e5e7eb] bg-white md:bg-slate-50 hover:border-primary/50'
+                          }`}
                       >
                         <span className="text-[24px] leading-none mb-[2px] md:mb-0">{option.emoji}</span>
                         <span className="text-[9px] md:hidden text-[#6b7280] leading-none">{option.name}</span>
@@ -470,11 +466,10 @@ export default function ProductsPage() {
                             key={preset}
                             type="button"
                             onClick={() => handleSizeChange(index, 'name', preset)}
-                            className={`px-[14px] md:px-3 py-[6px] md:py-1 text-[13px] md:text-xs font-medium rounded-full transition-all ${
-                              size.name === preset
-                                ? 'bg-[#16a34a] md:bg-primary text-white border-[#16a34a] md:border-primary'
-                                : 'bg-white md:bg-slate-100 text-[#374151] md:text-slate-600 border-[1.5px] border-[#e5e7eb] md:border md:border-slate-200 hover:border-[#16a34a] md:hover:border-primary md:hover:text-primary'
-                            }`}
+                            className={`px-[14px] md:px-3 py-[6px] md:py-1 text-[13px] md:text-xs font-medium rounded-full transition-all ${size.name === preset
+                              ? 'bg-[#16a34a] md:bg-primary text-white border-[#16a34a] md:border-primary'
+                              : 'bg-white md:bg-slate-100 text-[#374151] md:text-slate-600 border-[1.5px] border-[#e5e7eb] md:border md:border-slate-200 hover:border-[#16a34a] md:hover:border-primary md:hover:text-primary'
+                              }`}
                           >
                             {preset}
                           </button>

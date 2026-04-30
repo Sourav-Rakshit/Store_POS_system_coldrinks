@@ -8,13 +8,17 @@ export const CUSTOMER_TYPES: Record<CustomerType, { label: string; badgeColor: s
     label: 'Regular',
     badgeColor: 'bg-slate-100 text-slate-700 border-slate-200',
   },
-  wholesale: {
-    label: 'Wholesale',
+  seasonal: {
+    label: 'Seasonal',
+    badgeColor: 'bg-orange-100 text-orange-700 border-orange-200',
+  },
+  retail: {
+    label: 'Retail',
     badgeColor: 'bg-blue-100 text-blue-700 border-blue-200',
   },
-  pickup: {
-    label: 'Pickup',
-    badgeColor: 'bg-green-100 text-green-700 border-green-200',
+  wholesale: {
+    label: 'Wholesale',
+    badgeColor: 'bg-purple-100 text-purple-700 border-purple-200',
   },
 };
 

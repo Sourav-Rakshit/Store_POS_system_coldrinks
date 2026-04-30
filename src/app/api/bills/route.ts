@@ -39,13 +39,22 @@ export async function GET() {
     const allItems = await db.select().from(billItems);
     console.log('📋 Bill items count:', allItems.length);
     
-    // Map items to bills in memory, parsing numeric fields
+    // Get all customer payments
+    const allPayments = await db.select().from(customerPayments);
+    
+    // Map items and payments to bills in memory, parsing numeric fields
     const billsWithItems = allBills
       .map(bill => {
         const items = allItems
           .filter(item => item.billId === bill.id)
           .map(parseBillItem);
-        return { ...parseBill(bill), items };
+        const payments = allPayments
+          .filter(p => p.billId === bill.id)
+          .map(p => ({
+            ...p,
+            amount: parseFloat(p.amount as string) || 0
+          }));
+        return { ...parseBill(bill), items, payments };
       })
       .sort((a, b) => {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;

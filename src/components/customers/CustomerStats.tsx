@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, DollarSign, CreditCard, Star } from 'lucide-react';
+import { Users, IndianRupee, CreditCard, Star } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface CustomerStatsProps {
@@ -11,8 +11,6 @@ export function CustomerStats({ customers }: CustomerStatsProps) {
   const totalCustomers = customers.length;
   const totalOutstanding = customers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
   const totalRevenue = customers.reduce((sum, c) => sum + (c.totalPurchases || 0), 0);
-  const vipCount = customers.filter(c => c.customerType === 'vip').length;
-  
   const stats = [
     {
       label: 'Total Customers',
@@ -23,7 +21,7 @@ export function CustomerStats({ customers }: CustomerStatsProps) {
     {
       label: 'Total Outstanding',
       value: formatCurrency(totalOutstanding),
-      icon: DollarSign,
+      icon: IndianRupee,
       color: 'bg-amber-100 text-amber-600',
     },
     {
@@ -32,20 +30,14 @@ export function CustomerStats({ customers }: CustomerStatsProps) {
       icon: CreditCard,
       color: 'bg-green-100 text-green-600',
     },
-    {
-      label: 'VIP Customers',
-      value: vipCount,
-      icon: Star,
-      color: 'bg-purple-100 text-purple-600',
-    },
   ];
-  
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-      {stats.map((stat) => (
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-[10px] lg:gap-4">
+      {stats.map((stat, index) => (
         <div
           key={stat.label}
-          className="bg-white rounded-xl border border-slate-200 p-3 flex flex-col justify-between h-full hover:-translate-y-0.5 transition-transform duration-200 shadow-sm hover:shadow-md"
+          className={`bg-white rounded-xl border border-slate-200 p-3 flex flex-col justify-between h-full hover:-translate-y-0.5 transition-transform duration-200 shadow-sm hover:shadow-md ${index === 2 ? 'col-span-2 md:col-span-1' : ''}`}
         >
           <div className="flex items-start justify-between mb-2 gap-2">
             <p className="text-[11px] text-slate-500 font-medium leading-tight mt-1">{stat.label}</p>

@@ -9,7 +9,9 @@ import { formatCurrency, formatDate, formatDateTime, toNumber } from '@/lib/util
 import { Search, Calendar, Filter, Receipt, ChevronRight, X, Printer, Download, Share2, MessageCircle, Loader2, Home } from 'lucide-react';
 import { Bill, StoreSettings } from '@/types';
 import { ThermalReceipt } from '@/components/billing/ThermalReceipt';
+import { MobileAvatar } from '@/components/layout/MobileAvatar';
 import { downloadBillImage, shareBillImage, shareViaWhatsApp } from '@/lib/generateBillImage';
+import { getPaymentTag, getPaymentBadgeStyle } from '@/lib/utils/paymentUtils';
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function HistoryPage() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -57,6 +61,13 @@ export default function HistoryPage() {
       await initSettings();
       await forceRefresh();
       setIsLoading(false);
+      
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('filter') === 'today') {
+          setDateFilter('today');
+        }
+      }
     };
     init();
   }, [forceRefresh, initSettings]);
@@ -89,6 +100,18 @@ export default function HistoryPage() {
           const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           if (billDate < monthAgo) return false;
           break;
+        case 'custom':
+          if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            if (billDate < start) return false;
+          }
+          if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            if (billDate > end) return false;
+          }
+          break;
       }
     }
 
@@ -103,18 +126,7 @@ export default function HistoryPage() {
   const totalBills = bills.length;
   const averageBillValue = totalBills > 0 ? totalRevenue / totalBills : 0;
 
-  const getPaymentModeBadge = (mode: string) => {
-    switch (mode) {
-      case 'Cash':
-        return 'bg-slate-100 text-slate-600';
-      case 'UPI':
-        return 'bg-primary/10 text-primary';
-      case 'Card':
-        return 'bg-primary/10 text-primary';
-      default:
-        return 'bg-slate-100 text-slate-600';
-    }
-  };
+  // getPaymentModeBadge is no longer used, we use getPaymentBadgeStyle
 
   const handleDownload = async () => {
     if (!receiptRef.current || !selectedBill) return;
@@ -198,7 +210,7 @@ export default function HistoryPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <header className="flex items-center justify-between lg:justify-start lg:gap-4 mb-2 lg:mb-0">
-        <div className="flex items-center gap-2 lg:gap-4">
+        <div className="flex items-center gap-2 lg:gap-4 w-full">
           {/* Mobile hamburger */}
           <button
             onClick={() => {
@@ -217,19 +229,16 @@ export default function HistoryPage() {
             <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-slate-100 rounded-lg"><Home className="w-5 h-5 text-slate-600" /></button>
           </div>
 
-          <div className="hidden lg:flex bg-primary/10 p-2 rounded-lg">
+          <div className="hidden lg:flex bg-primary/10 p-2 rounded-lg shrink-0">
             <Receipt className="w-6 h-6 text-primary" />
           </div>
 
-          <div className="text-center lg:text-left">
+          <div className="flex-1 text-center lg:text-left min-w-0">
             <h1 className="text-lg lg:text-xl font-bold">Bill History</h1>
-            <p className="text-[11px] lg:text-sm text-slate-500 whitespace-nowrap">View all transaction records</p>
+            <p className="text-[11px] lg:text-sm text-slate-500 truncate">View all transaction records</p>
           </div>
-        </div>
 
-        {/* Mobile Avatar placeholder */}
-        <div className="lg:hidden w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <MobileAvatar />
         </div>
       </header>
 
@@ -276,11 +285,72 @@ export default function HistoryPage() {
           </div>
         </div>
         <div className="flex gap-2 w-full lg:w-auto">
-          {/* Mobile fake date picker */}
-          <div className="flex-1 lg:hidden flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-500">
-            <Calendar className="w-4 h-4" />
-            <span>Select Date</span>
-          </div>
+          {/* Mobile date pickers */}
+          {dateFilter === 'custom' ? (
+            <div className="flex-1 lg:hidden flex flex-col gap-2 w-full">
+              <div className="w-full">
+                <label className="block text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.05em] mb-1 px-1">From</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={{
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    padding: '0 12px',
+                    border: '1.5px solid #e5e7eb',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    height: '44px',
+                    width: '100%',
+                    cursor: 'pointer',
+                    backgroundColor: 'white',
+                    color: '#111',
+                  }}
+                />
+              </div>
+              <div className="w-full">
+                <label className="block text-[11px] font-bold text-[#9ca3af] uppercase tracking-[0.05em] mb-1 px-1">To</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={{
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    padding: '0 12px',
+                    border: '1.5px solid #e5e7eb',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    height: '44px',
+                    width: '100%',
+                    cursor: 'pointer',
+                    backgroundColor: 'white',
+                    color: '#111',
+                  }}
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  // Filtering is client-side but we trigger UI feedback or force refetch
+                  if (typeof document !== 'undefined') {
+                    (document.activeElement as HTMLElement)?.blur?.();
+                  }
+                }}
+                className="w-full h-[44px] bg-[#16a34a] hover:bg-[#15803d] text-white rounded-[10px] text-[14px] font-semibold shadow-sm transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setDateFilter('custom')}
+              className="flex-1 lg:hidden flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-500"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Select Date</span>
+            </button>
+          )}
           
           <button className="hidden lg:flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-primary/5 text-sm font-medium hover:bg-slate-50 transition-colors">
             <Calendar className="w-4 h-4" />
@@ -300,6 +370,7 @@ export default function HistoryPage() {
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
               <option value="month">Last 30 Days</option>
+              <option value="custom">Custom Date</option>
             </select>
           </div>
         </div>
@@ -313,8 +384,8 @@ export default function HistoryPage() {
             const paid = typeof bill.cashReceived === 'string' ? parseFloat(bill.cashReceived) : (bill.cashReceived || 0);
             const status = paid >= total ? { text: 'PAID', bg: 'bg-[#dcfce7]', textC: 'text-[#16a34a]' } : paid > 0 ? { text: 'PARTIAL', bg: 'bg-[#fef3c7]', textC: 'text-[#d97706]' } : { text: 'DUE', bg: 'bg-[#fee2e2]', textC: 'text-[#dc2626]' };
             
-            const pMode = bill.paymentMode || 'Cash';
-            const modeBg = pMode === 'Cash' ? 'bg-slate-100 text-slate-600' : pMode === 'UPI' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700';
+            const pMode = getPaymentTag(bill);
+            const modeBg = getPaymentBadgeStyle(pMode);
             
             return (
               <div 
@@ -378,8 +449,8 @@ export default function HistoryPage() {
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentModeBadge(bill.paymentMode)}`}>
-                        {bill.paymentMode}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${getPaymentBadgeStyle(getPaymentTag(bill))}`}>
+                        {getPaymentTag(bill)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-semibold">

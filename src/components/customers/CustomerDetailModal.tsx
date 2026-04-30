@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, CreditCard, Receipt, DollarSign, Loader2, Package, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, CreditCard, Receipt, IndianRupee, Loader2, Package, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { CustomerWithStats, CustomerPayment, Bill } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
+import { ChevronRight } from 'lucide-react';
 import { CUSTOMER_TYPES, getBalanceStatus } from '@/lib/constants/customerConstants';
 import { ManageDueModal } from './ManageDueModal';
+import { BillDetailsModal } from '@/components/billing/BillDetailsModal';
 
 interface CustomerDetailModalProps {
   customer: CustomerWithStats;
@@ -33,6 +35,7 @@ export function CustomerDetailModal({
   const [customerData, setCustomerData] = useState<CustomerWithStats>(customer);
   const [payments, setPayments] = useState<CustomerPayment[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
+  const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
   const { addToast } = useToast();
 
   // Edit state
@@ -354,7 +357,7 @@ export function CustomerDetailModal({
                     onClick={() => setShowManageDue(true)}
                     className="w-full py-3 bg-primary text-white rounded-lg font-medium flex items-center justify-center gap-2"
                   >
-                    <DollarSign className="w-4 h-4" />
+                    <IndianRupee className="w-4 h-4" />
                     Record Payment
                   </button>
                 )}
@@ -407,7 +410,8 @@ export function CustomerDetailModal({
                       salesBills.map((bill) => (
                         <div
                           key={bill.id}
-                          className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                          onClick={() => setSelectedBillId(bill.id)}
+                          className="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors group"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -425,13 +429,16 @@ export function CustomerDetailModal({
                               </p>
                             )}
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold">{formatCurrency(bill.totalAmount)}</p>
-                            {(bill.status === 'partially_paid' || bill.status === 'pending') && (
-                              <p className="text-xs text-red-500">
-                                Due: {formatCurrency(bill.outstandingAmount || 0)}
-                              </p>
-                            )}
+                          <div className="text-right flex items-center gap-3">
+                            <div>
+                              <p className="text-sm font-bold">{formatCurrency(bill.totalAmount)}</p>
+                              {(bill.status === 'partially_paid' || bill.status === 'pending') && (
+                                <p className="text-xs text-red-500">
+                                  Due: {formatCurrency(bill.outstandingAmount || 0)}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary shrink-0" />
                           </div>
                         </div>
                       ))
@@ -452,7 +459,8 @@ export function CustomerDetailModal({
                       orderBills.map((bill) => (
                         <div
                           key={bill.id}
-                          className="flex items-center justify-between p-3 bg-amber-50 rounded-lg"
+                          onClick={() => setSelectedBillId(bill.id)}
+                          className="flex items-center justify-between p-3 bg-amber-50 hover:bg-amber-100 cursor-pointer rounded-lg transition-colors group"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -476,18 +484,21 @@ export function CustomerDetailModal({
                               </p>
                             )}
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold">{formatCurrency(bill.totalAmount)}</p>
-                            {(bill.cashReceived ?? 0) > 0 && (
-                              <p className="text-xs text-green-600">
-                                Paid: {formatCurrency(bill.cashReceived || 0)}
-                              </p>
-                            )}
-                            {(bill.status === 'partially_paid' || bill.status === 'pending') && (
-                              <p className="text-xs text-red-500">
-                                Due: {formatCurrency(bill.outstandingAmount || 0)}
-                              </p>
-                            )}
+                          <div className="text-right flex items-center gap-3">
+                            <div>
+                              <p className="text-sm font-bold">{formatCurrency(bill.totalAmount)}</p>
+                              {(bill.cashReceived ?? 0) > 0 && (
+                                <p className="text-xs text-green-600">
+                                  Paid: {formatCurrency(bill.cashReceived || 0)}
+                                </p>
+                              )}
+                              {(bill.status === 'partially_paid' || bill.status === 'pending') && (
+                                <p className="text-xs text-red-500">
+                                  Due: {formatCurrency(bill.outstandingAmount || 0)}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-amber-300 group-hover:text-amber-600 shrink-0" />
                           </div>
                         </div>
                       ))
@@ -538,6 +549,15 @@ export function CustomerDetailModal({
           dueBills={bills.filter(b => b.status === 'pending' || b.status === 'partially_paid')}
           onClose={() => setShowManageDue(false)}
           onSuccess={handlePaymentRecorded}
+        />
+      )}
+      
+      {/* Bill Details Modal */}
+      {selectedBillId && (
+        <BillDetailsModal
+          billId={selectedBillId}
+          isOpen={!!selectedBillId}
+          onClose={() => setSelectedBillId(null)}
         />
       )}
       

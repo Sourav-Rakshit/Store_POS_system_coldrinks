@@ -12,6 +12,7 @@ import { DataFreshness } from '@/components/ui/DataFreshness';
 import { Search, Plus, Package, AlertCircle, CheckCircle, XCircle, Filter, Pin, Trash2, Home, Menu } from 'lucide-react';
 import { Product, SKU, StockStatus } from '@/types';
 import { formatStock } from '@/lib/utils';
+import { MobileAvatar } from '@/components/layout/MobileAvatar';
 const PRODUCT_ICONS = [
   { name: 'Cola', emoji: '🥤' },
   { name: 'Mango', emoji: '🥭' },
@@ -69,16 +70,23 @@ export default function InventoryPage() {
     if (ownerName) {
       return ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
-    return 'FF';
+    return 'SE';
   };
 
   useEffect(() => {
     const initialize = async () => {
       await Promise.all([initProducts(), initInventory()]);
       setIsLoading(false);
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('filter') === 'low') {
+          setFilterStatus('Low Stock');
+        }
+      }
     };
     initialize();
-  }, [initProducts, initInventory]);
+  }, [initProducts, initInventory, setFilterStatus]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -270,7 +278,7 @@ export default function InventoryPage() {
                 <span className="md:hidden">Inventory</span>
                 <span className="hidden md:inline">Cold Drinks Inventory</span>
               </h1>
-              <p className="hidden md:block text-sm text-slate-500 leading-snug">Manage your beverage stock and SKUs</p>
+              <p className="hidden md:block text-sm text-slate-500 leading-snug">Manage beverage stock and SKUs</p>
             </div>
           </div>
 
@@ -284,14 +292,9 @@ export default function InventoryPage() {
           </div>
 
           {/* Mobile Avatar */}
-          <Link
-            href="/settings"
-            className="size-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm hover:bg-primary/20 transition-colors shrink-0 md:hidden"
-          >
-            {getInitials()}
-          </Link>
+          <MobileAvatar />
         </div>
-        <p className="text-xs text-slate-500 leading-snug text-center w-full truncate md:hidden">Manage your beverage stock and SKUs</p>
+        <p className="text-xs text-slate-500 leading-snug text-center w-full truncate md:hidden">Manage beverage stock and SKUs</p>
       </header>
 
       {/* Stats Cards */}
@@ -336,18 +339,18 @@ export default function InventoryPage() {
 
       {/* Search and Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-3 md:p-4 !mt-0 md:!mt-6 !mb-0">
-        <div className="flex flex-row md:flex-col gap-2 md:gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-2 md:gap-3">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 md:pl-11 pr-3 py-2 md:py-3 h-10 md:h-11 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm md:text-base"
+              className="w-full pl-9 md:pl-11 pr-3 py-2 md:py-3 h-11 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm md:text-base"
             />
           </div>
-          <div className="flex items-center w-[120px] md:w-full shrink-0">
+          <div className="hidden md:flex items-center w-full shrink-0">
             <Filter className="hidden md:block w-5 h-5 text-slate-500 mr-2" />
             <select
               value={filterStatus}

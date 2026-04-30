@@ -32,13 +32,17 @@ function getDateForFilename(): string {
 async function exportProducts(): Promise<string> {
   const allProducts = await db.select().from(products).orderBy(desc(products.createdAt));
   
-  const headers = ['Product Name', 'Brand', 'Category', 'Available Sizes', 'Created Date'];
+  const headers = ['Product Name', 'Brand', 'Category', 'Available Sizes', 'Bottle Price', 'Carton Price', 'Bottles Per Carton', 'Created At (date + time)', 'Updated At (date + time)'];
   const rows = allProducts.map(p => [
     p.name || '',
     p.brand || '',
     p.category || '',
-    '', // Sizes would need a separate query
-    p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-GB') : ''
+    '', // Available Sizes
+    '', // Bottle Price
+    '', // Carton Price
+    '', // Bottles Per Carton
+    p.createdAt ? `${new Date(p.createdAt).toLocaleDateString('en-GB')} ${new Date(p.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : '',
+    p.updatedAt ? `${new Date(p.updatedAt).toLocaleDateString('en-GB')} ${new Date(p.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : ''
   ]);
   
   return generateCSV(headers, rows);
@@ -48,17 +52,17 @@ async function exportProducts(): Promise<string> {
 async function exportInventory(): Promise<string> {
   const allInventory = await db.select().from(inventory).orderBy(inventory.skuCode);
   
-  const headers = ['SKU Code', 'Product Name', 'Brand', 'Size', 'Current Stock (Bottles)', 'Current Stock (Cartons)', 'Low Stock Threshold', 'Status', 'Last Restocked'];
+  const headers = ['Product Name', 'Size', 'Category', 'Total Bottles', 'Cartons', 'Remaining Bottles', 'Status (Healthy/Low/Out of Stock)', 'Last Updated (date + time)', 'Last Restock Date (date + time)'];
   const rows = allInventory.map(i => [
-    i.skuCode || '',
-    '', // Product name would need JOIN
-    '', // Brand would need JOIN
-    '', // Size would need JOIN
+    '', // Product Name
+    '', // Size
+    '', // Category
     String(i.currentStock || 0),
-    '', // Cartons would need calculation
-    String(i.lowStockThreshold || 50),
+    '', // Cartons
+    '', // Remaining Bottles
     i.status || 'Healthy',
-    i.lastRestocked ? new Date(i.lastRestocked).toLocaleDateString('en-GB') : ''
+    i.lastUpdated ? `${new Date(i.lastUpdated).toLocaleDateString('en-GB')} ${new Date(i.lastUpdated).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : '',
+    i.lastRestocked ? `${new Date(i.lastRestocked).toLocaleDateString('en-GB')} ${new Date(i.lastRestocked).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : ''
   ]);
   
   return generateCSV(headers, rows);
@@ -68,16 +72,19 @@ async function exportInventory(): Promise<string> {
 async function exportBills(): Promise<string> {
   const allBills = await db.select().from(bills).orderBy(desc(bills.createdAt));
   
-  const headers = ['Invoice Number', 'Date', 'Customer Name', 'Customer Phone', 'Payment Mode', 'Subtotal', 'Discount', 'Total Amount', 'Status'];
+  const headers = ['Date', 'Time', 'Invoice Number', 'Customer', 'Items', 'Subtotal', 'Discount', 'Grand Total', 'Paid Amount', 'Due Amount', 'Payment Mode', 'Status'];
   const rows = allBills.map(b => [
-    b.invoiceNumber || '',
     b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-GB') : '',
+    b.createdAt ? new Date(b.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+    b.invoiceNumber || '',
     b.customerName || '',
-    b.customerPhone || '',
+    '', // Items
+    String(b.subtotal || '0'),
+    String(b.discountAmount || '0'),
+    String(b.totalAmount || '0'),
+    String(b.cashReceived || '0'),
+    String((Number(b.totalAmount) || 0) - (Number(b.cashReceived) || 0)),
     b.paymentMode || 'Cash',
-    b.subtotal || '0',
-    b.discountAmount || '0',
-    b.totalAmount || '0',
     b.status || 'paid'
   ]);
   
@@ -88,17 +95,16 @@ async function exportBills(): Promise<string> {
 async function exportCustomers(): Promise<string> {
   const allCustomers = await db.select().from(customers).orderBy(desc(customers.createdAt));
   
-  const headers = ['Name', 'Phone', 'Email', 'Address', 'Customer Type', 'Credit Limit', 'Total Purchases', 'Total Paid', 'Outstanding Balance', 'Member Since'];
+  const headers = ['Customer Name', 'Phone', 'Type', 'Total Purchases', 'Outstanding Balance', 'First Bill Date', 'Last Bill Date', 'Created At (date + time)'];
   const rows = allCustomers.map(c => [
     c.name || '',
     c.phone || '',
-    c.email || '',
-    c.address || '',
     c.customerType || 'regular',
     String(c.totalPurchases || 0),
-    String(c.totalPaid || 0),
     String(c.outstandingBalance || 0),
-    c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-GB') : ''
+    '', // First Bill Date
+    '', // Last Bill Date
+    c.createdAt ? `${new Date(c.createdAt).toLocaleDateString('en-GB')} ${new Date(c.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : ''
   ]);
   
   return generateCSV(headers, rows);
@@ -118,28 +124,28 @@ export async function GET(request: Request) {
     switch (type) {
       case 'products':
         csvContent = await exportProducts();
-        filename = `products-${dateStr}.csv`;
+        filename = `products-export-${dateStr}.csv`;
         break;
         
       case 'inventory':
         csvContent = await exportInventory();
-        filename = `inventory-${dateStr}.csv`;
+        filename = `inventory-export-${dateStr}.csv`;
         break;
         
       case 'bills':
         csvContent = await exportBills();
-        filename = `bills-${dateStr}.csv`;
+        filename = `bills-export-${dateStr}.csv`;
         break;
         
       case 'customers':
         csvContent = await exportCustomers();
-        filename = `customers-${dateStr}.csv`;
+        filename = `customers-export-${dateStr}.csv`;
         break;
         
       case 'all':
         // For 'all', we'd need to return multiple CSVs - for simplicity, export products
         csvContent = await exportProducts();
-        filename = `all-data-${dateStr}.csv`;
+        filename = `all-data-export-${dateStr}.csv`;
         break;
         
       default:

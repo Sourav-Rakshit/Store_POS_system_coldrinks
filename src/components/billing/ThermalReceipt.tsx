@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Bill, StoreSettings, BillItem } from '@/types';
+import { getPaymentTag } from '@/lib/utils/paymentUtils';
 
 interface ThermalReceiptProps {
   bill: Bill;
@@ -384,7 +385,7 @@ export function ThermalReceipt({
         marginTop: '6px', padding: '4px 8px', fontSize: '8px',
         textAlign: 'center', backgroundColor: '#f0f0f0', borderTop: '1px solid #000',
       }}>
-        <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentMethod()}
+        <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentTag(bill)}
       </div>
 
       {/* ── FOOTER ── */}

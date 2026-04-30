@@ -135,8 +135,8 @@ export function BillReceipt({ bill, settings }: BillReceiptProps) {
                   </p>
                 )}
               </div>
-              {/* Show type badge for VIP/Wholesale */}
-              {bill.customerType && bill.customerType === 'wholesale' && (
+              {/* Show type badge for non-regular customers */}
+              {bill.customerType && bill.customerType !== 'regular' && (
                 <span
                   style={{
                     fontSize: '10px',

@@ -107,8 +107,9 @@ export async function GET(request: Request) {
     // 5. Revenue breakdown by customer type
     const revenueByType: Record<string, number> = {
       regular: 0,
+      seasonal: 0,
+      retail: 0,
       wholesale: 0,
-      vip: 0,
     };
 
     customerBillData.forEach((c) => {

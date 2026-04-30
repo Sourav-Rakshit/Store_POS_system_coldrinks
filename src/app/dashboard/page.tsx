@@ -11,7 +11,7 @@ import { formatCurrency, formatDate, calculatePercentageChange, toNumber } from 
 import { 
   TrendingUp, 
   TrendingDown, 
-  DollarSign, 
+  IndianRupee, 
   FileText, 
   Package, 
   AlertTriangle,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Counter animation component
 function CounterAnimation({ value, suffix = '' }: { value: number; suffix?: string }) {
@@ -72,6 +73,7 @@ function CounterAnimation({ value, suffix = '' }: { value: number; suffix?: stri
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { products, forceRefresh: refreshProducts } = useProductStore();
   const { bills, forceRefresh: refreshBills } = useBillStore();
   const { inventory, forceRefresh: refreshInventory } = useInventoryStore();
@@ -168,7 +170,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-slate-500 font-medium">Today's Sales</span>
             <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-primary" />
+              <IndianRupee className="w-4 h-4 text-primary" />
             </div>
           </div>
           <div className="flex flex-col gap-1">
@@ -184,7 +186,8 @@ export default function DashboardPage() {
 
         {/* Bills Generated */}
         <div 
-          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in"
+          onClick={() => router.push('/history?filter=today')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in cursor-pointer active:scale-95"
           style={{ animationDelay: '200ms' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -206,7 +209,8 @@ export default function DashboardPage() {
 
         {/* Total Products */}
         <div 
-          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in"
+          onClick={() => router.push('/inventory')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in cursor-pointer active:scale-95"
           style={{ animationDelay: '300ms' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -225,7 +229,8 @@ export default function DashboardPage() {
 
         {/* Low Stock Alerts */}
         <div 
-          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in"
+          onClick={() => router.push('/inventory?filter=low')}
+          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-200 animate-fade-in cursor-pointer active:scale-95"
           style={{ animationDelay: '400ms' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -341,49 +346,69 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {recentBills.map((bill, i) => (
-                <tr 
-                  key={bill.id} 
-                  className="hover:bg-slate-50 transition-colors"
-                  style={{ animationDelay: `${700 + i * 100}ms` }}
-                >
-                  <td className="px-6 py-4 text-sm font-medium font-mono">{bill.invoiceNumber}</td>
-                  <td className="px-6 py-4 text-sm">{bill.customerName || 'Walk-in'}</td>
-                  <td className="px-6 py-4 text-sm font-semibold font-mono">{formatCurrency(bill.totalAmount)}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 animate-pulse">
-                      PAID
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {recentBills.map((bill, i) => {
+                const status = (bill as any).status || (bill as any).paymentStatus || (bill as any).billStatus || 'paid';
+                const isPaid = status.toLowerCase() === 'paid';
+                
+                return (
+                  <tr 
+                    key={bill.id} 
+                    className="hover:bg-slate-50 transition-colors"
+                    style={{ animationDelay: `${700 + i * 100}ms` }}
+                  >
+                    <td className="px-6 py-4 text-sm font-medium font-mono">{bill.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-sm">{bill.customerName || 'Walk-in'}</td>
+                    <td className="px-6 py-4 text-sm font-semibold font-mono">{formatCurrency(bill.totalAmount)}</td>
+                    <td className="px-6 py-4">
+                      {isPaid ? (
+                        <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700 animate-pulse">
+                          PAID
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                          DUE
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {/* Mobile Card List */}
         <div className="lg:hidden divide-y divide-slate-100">
-          {recentBills.map((bill, i) => (
-            <div 
-              key={bill.id} 
-              className="p-4 flex items-center justify-between"
-              style={{ animationDelay: `${700 + i * 100}ms` }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-primary" />
+          {recentBills.map((bill, i) => {
+            const status = (bill as any).status || (bill as any).paymentStatus || (bill as any).billStatus || 'paid';
+            const isPaid = status.toLowerCase() === 'paid';
+            
+            return (
+              <div 
+                key={bill.id} 
+                className="p-4 flex items-center justify-between"
+                style={{ animationDelay: `${700 + i * 100}ms` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{bill.invoiceNumber}</p>
+                    <p className="text-xs text-slate-500">{bill.customerName || 'Walk-in'}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-sm">{bill.invoiceNumber}</p>
-                  <p className="text-xs text-slate-500">{bill.customerName || 'Walk-in'}</p>
+                <div className="text-right">
+                  <p className="font-bold font-mono text-sm">{formatCurrency(bill.totalAmount)}</p>
+                  {isPaid ? (
+                    <span className="text-[10px] text-green-600 font-medium">PAID</span>
+                  ) : (
+                    <span className="text-[10px] text-red-600 font-medium">DUE</span>
+                  )}
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-bold font-mono text-sm">{formatCurrency(bill.totalAmount)}</p>
-                <span className="text-[10px] text-green-600 font-medium">PAID</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

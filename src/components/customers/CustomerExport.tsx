@@ -32,8 +32,6 @@ export function CustomerExport({ customers, iconOnly }: CustomerExportProps) {
       } else if (type === 'outstanding') {
         // Filter to those with outstanding balance - handled by API or client
         filters.type = 'all'; // API will return all, we filter client-side
-      } else if (type === 'vip') {
-        filters.type = 'vip';
       } else if (type === 'wholesale') {
         filters.type = 'wholesale';
       }
@@ -152,12 +150,6 @@ export function CustomerExport({ customers, iconOnly }: CustomerExportProps) {
               className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded"
             >
               Export with Outstanding (CSV)
-            </button>
-            <button
-              onClick={() => handleExport('vip')}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded"
-            >
-              Export VIP Customers (CSV)
             </button>
             <button
               onClick={() => handleExport('wholesale')}

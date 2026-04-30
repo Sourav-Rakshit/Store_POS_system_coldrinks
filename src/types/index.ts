@@ -142,7 +142,7 @@ export interface DashboardStats {
 // ============================================================================
 // CUSTOMER TYPES
 // ============================================================================
-export type CustomerType = 'regular' | 'wholesale' | 'pickup';
+export type CustomerType = 'regular' | 'seasonal' | 'retail' | 'wholesale';
 
 export type CustomerPaymentType = 'payment' | 'refund' | 'credit';
 

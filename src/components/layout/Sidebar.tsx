@@ -9,6 +9,7 @@ import {
   ShoppingCart, 
   Package, 
   BarChart3, 
+  BarChart2,
   Settings,
   IceCream,
   Users,
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/inventory', label: 'Inventory', icon: ShoppingCart },
   { href: '/customers', label: 'Customers', icon: Users },
   { href: '/history', label: 'History', icon: BarChart3 },
+  { href: '/reports', label: 'Reports', icon: BarChart2 },
 ];
 
 export function Sidebar() {

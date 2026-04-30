@@ -7,7 +7,7 @@ import { useBillStore } from '@/store/useBillStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { formatCurrency } from '@/lib/utils';
-import { Search, Package, Calendar, User, Phone, ChevronRight, AlertCircle, CheckCircle, RotateCcw, DollarSign, X } from 'lucide-react';
+import { Search, Package, Calendar, User, Phone, ChevronRight, AlertCircle, CheckCircle, RotateCcw, IndianRupee, X } from 'lucide-react';
 import { CustomerWithStats, Bill, BillItem } from '@/types';
 
 export default function OrdersPage() {
@@ -771,7 +771,7 @@ export default function OrdersPage() {
                         disabled={isProcessing}
                         className="flex-1 py-2 text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                       >
-                        <DollarSign className="w-4 h-4" />
+                        <IndianRupee className="w-4 h-4" />
                         {isProcessing ? '...' : 'Payment'}
                       </button>
                     )}

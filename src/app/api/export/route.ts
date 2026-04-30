@@ -61,7 +61,7 @@ async function exportInventory(): Promise<string> {
     '', // Cartons
     '', // Remaining Bottles
     i.status || 'Healthy',
-    i.lastUpdated ? `${new Date(i.lastUpdated).toLocaleDateString('en-GB')} ${new Date(i.lastUpdated).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : '',
+    i.updatedAt ? `${new Date(i.updatedAt).toLocaleDateString('en-GB')} ${new Date(i.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : '',
     i.lastRestocked ? `${new Date(i.lastRestocked).toLocaleDateString('en-GB')} ${new Date(i.lastRestocked).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}` : ''
   ]);
   

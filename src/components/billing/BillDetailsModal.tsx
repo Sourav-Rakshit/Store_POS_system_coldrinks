@@ -6,7 +6,7 @@ import { Bill } from '@/types';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useToast } from '@/components/Toast';
 import { ThermalReceipt } from '@/components/billing/ThermalReceipt';
-import { downloadBillImage, shareBillImage, shareViaWhatsApp } from '@/lib/generateBillImage';
+import { downloadBillImage, shareBillImage, shareViaWhatsApp, captureReceiptAsBase64 } from '@/lib/generateBillImage';
 
 interface BillDetailsModalProps {
   billId: string;
@@ -41,6 +41,13 @@ export function BillDetailsModal({ billId, isOpen, onClose }: BillDetailsModalPr
       fetchBill();
     }
   }, [isOpen, billId]);
+
+  // Preload logo image for html2canvas
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/newlogo.png';
+  }, []);
 
   const fetchBill = async () => {
     try {
@@ -96,10 +103,38 @@ export function BillDetailsModal({ billId, isOpen, onClose }: BillDetailsModalPr
     if (!receiptRef.current || !bill) return;
     setIsWhatsapping(true);
     try {
-      await shareViaWhatsApp(receiptRef.current, bill.invoiceNumber, settings.shopName, Number(bill.totalAmount));
-      addToast('info', 'Bill image downloaded — please attach it manually in WhatsApp');
+      // First capture as high-res base64 PNG (Fix 5)
+      const base64 = await captureReceiptAsBase64(receiptRef.current);
+      
+      // Convert base64 to blob
+      const res = await fetch(base64);
+      const blob = await res.blob();
+      const file = new File([blob], `${bill.invoiceNumber}.png`, {
+        type: 'image/png'
+      });
+
+      // Try Web Share API first (mobile) (Fix 5)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        // Fallback: download high quality PNG and open WhatsApp
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${bill.invoiceNumber}.png`;
+        link.click();
+        
+        // Open WhatsApp with message
+        const message = encodeURIComponent(
+          `Your bill from ${settings.shopName}.\nInvoice: ${bill.invoiceNumber}\nTotal: ₹${Number(bill.totalAmount).toFixed(2)}`
+        );
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        addToast('info', 'Bill image downloaded — please attach it manually in WhatsApp');
+      }
     } catch (error) {
-      console.error(error);
+      console.error('WhatsApp error:', error);
       addToast('error', 'Failed to share via WhatsApp');
     } finally {
       setIsWhatsapping(false);
@@ -151,7 +186,7 @@ export function BillDetailsModal({ billId, isOpen, onClose }: BillDetailsModalPr
             className="w-full h-[46px] flex items-center justify-center gap-2 bg-white border-[1.5px] border-[#16a34a] hover:bg-green-50 disabled:opacity-50 text-[#16a34a] rounded-[10px] font-semibold text-[14px] transition-colors"
           >
             {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download JPG
+            Download PNG
           </button>
 
           <div className="flex gap-2.5">

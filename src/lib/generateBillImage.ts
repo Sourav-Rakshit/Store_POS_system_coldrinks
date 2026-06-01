@@ -88,7 +88,7 @@ export async function shareToTinyPrint(
 }
 
 /**
- * Capture a DOM element as a base64 JPG image
+ * Capture a DOM element as a base64 PNG image (high resolution)
  */
 export async function captureReceiptAsBase64(element: HTMLElement): Promise<string> {
   let captureContainer: HTMLDivElement | null = null;
@@ -104,20 +104,30 @@ export async function captureReceiptAsBase64(element: HTMLElement): Promise<stri
     const width = Math.ceil(clone.scrollWidth || clone.offsetWidth || clone.clientWidth || clone.getBoundingClientRect().width || 400);
     const height = Math.ceil(clone.scrollHeight || clone.offsetHeight || clone.clientHeight || 1);
     const options = {
-      scale: 2,
+      scale: 3,              // 3x resolution (renders at 3x pixel density)
       backgroundColor: '#ffffff',
-      useCORS: true,
+      useCORS: true,         // allow logo/images to render
+      allowTaint: false,
       logging: false,
+      imageTimeout: 15000,   // wait longer for images to load
       width,
       height,
       windowWidth: width,
       windowHeight: height,
       scrollX: 0,
       scrollY: 0,
+      onclone: (clonedDoc: Document) => {
+        // Make sure fonts are loaded in cloned document
+        const clonedElement = clonedDoc.querySelector('[data-receipt-root="true"]') as HTMLElement;
+        if (clonedElement) {
+          clonedElement.style.fontFamily = '"Courier New", Courier, monospace';
+        }
+      }
     } as any;
     const canvas = await html2canvas(clone, options);
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    // Use PNG for lossless maximum quality (Fix 2)
+    const dataUrl = canvas.toDataURL('image/png');
     return dataUrl;
   } catch (error) {
     console.error('Error capturing receipt:', error);
@@ -139,7 +149,7 @@ function getFormattedDate(): string {
 }
 
 /**
- * Download a receipt as a JPG file
+ * Download a receipt as a PNG file
  */
 export async function downloadBillImage(
   element: HTMLElement,
@@ -150,7 +160,7 @@ export async function downloadBillImage(
 
     // Create a link element with date in filename
     const link = document.createElement('a');
-    link.download = `INV-${invoiceNumber.replace('INV-', '')}-${getFormattedDate()}.jpg`;
+    link.download = `INV-${invoiceNumber.replace('INV-', '')}-${getFormattedDate()}.png`;
     link.href = dataUrl;
 
     // Trigger download
@@ -167,7 +177,7 @@ export async function downloadBillImage(
  * Get filename from invoice number
  */
 function getFilename(invoiceNumber: string): string {
-  return `INV-${invoiceNumber.replace('INV-', '')}.jpg`;
+  return `INV-${invoiceNumber.replace('INV-', '')}.png`;
 }
 
 /**
@@ -195,7 +205,7 @@ export async function shareBillImage(
 
     // Create file from blob
     const file = new File([blob], getFilename(invoiceNumber), {
-      type: 'image/jpeg',
+      type: 'image/png',
     });
 
     // Check if sharing is supported with the file
@@ -287,8 +297,8 @@ export async function downloadBillPDF(
       format: [pdfWidth, pdfHeight],
     });
 
-    // Add image to PDF
-    pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    // Add image to PDF using PNG
+    pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
     // Save PDF
     pdf.save(`INV-${invoiceNumber.replace('INV-', '')}-${getFormattedDate()}.pdf`);

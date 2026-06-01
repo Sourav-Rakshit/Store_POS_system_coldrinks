@@ -90,23 +90,36 @@ export function BillSuccessModal({
     
     setIsWhatsapping(true);
     try {
-      // First capture as base64 to download
+      // First capture as high-res base64 PNG (Fix 5)
       const base64 = await captureReceiptAsBase64(receiptRef.current);
       
-      // Download the image
-      const link = document.createElement('a');
-      link.download = `${bill.invoiceNumber}.jpg`;
-      link.href = base64;
-      link.click();
-      
-      // Open WhatsApp with message
-      const message = encodeURIComponent(
-        `Your bill from ${shopName}.\nInvoice: ${bill.invoiceNumber}\nTotal: ₹${Number(bill.totalAmount).toFixed(2)}`
-      );
-      const whatsappUrl = `https://api.whatsapp.com/send?text=${message}`;
-      window.open(whatsappUrl, '_blank');
-      
-      addToast('info', 'Bill image downloaded — please attach it manually in WhatsApp');
+      // Convert base64 to blob
+      const res = await fetch(base64);
+      const blob = await res.blob();
+      const file = new File([blob], `${bill.invoiceNumber}.png`, {
+        type: 'image/png'
+      });
+
+      // Try Web Share API first (mobile) (Fix 5)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+      } else {
+        // Fallback: download high quality PNG and open WhatsApp
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${bill.invoiceNumber}.png`;
+        link.click();
+        
+        // Open WhatsApp with message
+        const message = encodeURIComponent(
+          `Your bill from ${shopName}.\nInvoice: ${bill.invoiceNumber}\nTotal: ₹${Number(bill.totalAmount).toFixed(2)}`
+        );
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+        
+        addToast('info', 'Bill image downloaded — please attach it manually in WhatsApp');
+      }
     } catch (error) {
       console.error('WhatsApp error:', error);
       addToast('error', 'Failed to share via WhatsApp');
@@ -114,6 +127,7 @@ export function BillSuccessModal({
       setIsWhatsapping(false);
     }
   };
+
 
   const handleNewBill = () => {
     onNewBill();
@@ -213,14 +227,14 @@ export function BillSuccessModal({
 
           {/* Action Buttons */}
           <div className="bg-white p-4 pb-[88px] lg:pb-6 border-t border-[#f3f4f6] lg:border-none shrink-0 rounded-t-[16px] lg:rounded-none">
-            {/* Download JPG - White style */}
+            {/* Download PNG - White style */}
             <button
               onClick={handleDownload}
               disabled={isAnyLoading}
               className="w-full h-[46px] lg:h-auto lg:py-3 flex items-center justify-center gap-2 bg-white border-[1.5px] border-[#16a34a] hover:bg-green-50 disabled:opacity-50 text-[#16a34a] rounded-[10px] lg:rounded-xl font-semibold text-[15px] lg:text-base transition-colors mb-2.5 lg:mb-3"
             >
               {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-              Download JPG
+              Download PNG
             </button>
 
             {/* Share/Print and WhatsApp Row */}

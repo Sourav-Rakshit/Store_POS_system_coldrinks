@@ -47,6 +47,12 @@ export function ThermalReceipt({
   returnedItems = [],
   refundAmount = 0,
 }: ThermalReceiptProps) {
+  React.useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/newlogo.png';
+  }, []);
+
   const billItems: BillItem[] = typeof bill.items === 'string'
     ? JSON.parse(bill.items)
     : bill.items || [];
@@ -126,51 +132,73 @@ export function ThermalReceipt({
     <div
       data-receipt-root="true"
       style={{
-      width: '52mm',
-      minHeight: '420px',
-      margin: '0 auto',
-      backgroundColor: '#ffffff',
-      fontFamily: '"Courier New", Courier, monospace',
-      fontSize: '9px',
-      color: '#000000',
-      padding: '0 0 60px 0',
-      boxSizing: 'border-box',
-    }}>
+        width: '52mm',
+        minHeight: '420px',
+        margin: '0 auto',
+        backgroundColor: '#ffffff',
+        fontFamily: '"Courier New", Courier, monospace',
+        fontSize: '9px',
+        color: '#000000',
+        padding: '0 0 60px 0',
+        boxSizing: 'border-box',
+        WebkitFontSmoothing: 'antialiased',
+        MozOsxFontSmoothing: 'grayscale',
+        textRendering: 'optimizeLegibility',
+      }}>
 
-     {/* ── HEADER ── */}
-<div style={{
-  padding: '8px 8px 6px',
-  borderBottom: '1px dashed #000',
-  textAlign: 'center',
-}}>
-  {/* Shop name with decorative side lines */}
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    marginBottom: '3px',
-  }}>
-    <div style={{ flex: 1, borderTop: '1px solid #000' }} />
-    <div style={{
-      fontSize: '13px',
-      fontWeight: 'bold',
-      letterSpacing: '1px',
-      whiteSpace: 'nowrap',
-      padding: '0 4px',
-    }}>
-      {(settings.shopName || 'MY SHOP').toUpperCase()}
-    </div>
-    <div style={{ flex: 1, borderTop: '1px solid #000' }} />
-  </div>
+      {/* ── HEADER ── */}
+      <div style={{
+        padding: '8px 8px 6px',
+        borderBottom: '1px dashed #000',
+        textAlign: 'center',
+      }}>
+        {/* Logo image */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: '4px',
+        }}>
+          <img
+            src="/newlogo.png"
+            alt="Saikat Enterprise"
+            style={{
+              width: '70px',
+              height: '70px',
+              objectFit: 'contain',
+            }}
+            crossOrigin="anonymous"
+          />
+        </div>
 
-  <div style={{ fontSize: '8px', color: '#444', marginTop: '2px' }}>
-    {settings.shopAddress || 'Shop Address'}
-  </div>
-  <div style={{ fontSize: '8px', color: '#444', marginTop: '1px' }}>
-    Ph: {settings.shopPhone || '9876543210'}
-  </div>
-</div>
+        {/* Shop name with decorative side lines */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '4px',
+          marginBottom: '3px',
+        }}>
+          <div style={{ flex: 1, borderTop: '1px solid #000' }} />
+          <div style={{
+            fontSize: '13px',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+            whiteSpace: 'nowrap',
+            padding: '0 4px',
+          }}>
+            {(settings.shopName || 'MY SHOP').toUpperCase()}
+          </div>
+          <div style={{ flex: 1, borderTop: '1px solid #000' }} />
+        </div>
+
+        <div style={{ fontSize: '8px', color: '#444', marginTop: '2px' }}>
+          {settings.shopAddress || 'Shop Address'}
+        </div>
+        <div style={{ fontSize: '8px', color: '#444', marginTop: '1px' }}>
+          Ph: {settings.shopPhone || '9876543210'}
+        </div>
+      </div>
 
       {/* ── BILL INFO ── */}
       <div style={{ padding: '4px 8px', fontSize: '8px' }}>
@@ -244,7 +272,7 @@ export function ThermalReceipt({
         </div>
       ))}
 
-{/* ── RETURN ITEMS ── */}
+      {/* ── RETURN ITEMS ── */}
       {showReturnSection && (
         <div style={{
           padding: '4px 8px',
@@ -366,18 +394,18 @@ export function ThermalReceipt({
 
       {/* ── STATUS STAMP ── */}
       <div style={{ textAlign: 'center', margin: '4px 8px 0', padding: '2px 0' }}>
-          <span style={{
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545',
-            border: `2px solid ${statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545'}`,
-            padding: '3px 10px',
-            borderRadius: '3px',
-            display: 'inline-block',
-            letterSpacing: '2px',
-          }}>
-            {statusStamp}
-          </span>
+        <span style={{
+          fontSize: '12px',
+          fontWeight: 'bold',
+          color: statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545',
+          border: `2px solid ${statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545'}`,
+          padding: '3px 10px',
+          borderRadius: '3px',
+          display: 'inline-block',
+          letterSpacing: '2px',
+        }}>
+          {statusStamp}
+        </span>
       </div>
 
       {/* ── PAYMENT METHOD ── */}

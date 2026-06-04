@@ -141,8 +141,6 @@ export function ThermalReceipt({
         color: '#000000',
         padding: '0 0 8px 0',
         boxSizing: 'border-box',
-        WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
         textRendering: 'optimizeLegibility',
       }}>
 
@@ -201,7 +199,7 @@ export function ThermalReceipt({
       </div>
 
       {/* ── BILL INFO ── */}
-      <div style={{ padding: '4px 8px', fontSize: '8.5px', fontWeight: '600' }}>
+      <div style={{ padding: '4px 8px', fontSize: '8.5px', fontWeight: 'bold' }}>
         <div>INV: {bill.invoiceNumber}</div>
         <div>DATE: {dateStr} | TIME: {timeStr}</div>
       </div>
@@ -209,22 +207,22 @@ export function ThermalReceipt({
       {/* ── CUSTOMER ── */}
       <div style={{ padding: '4px 8px 5px', borderBottom: '1px dashed #000000', fontSize: '9px' }}>
         <div style={{ marginBottom: '2px' }}>
-          <span style={{ fontWeight: '700' }}>Type:</span> <span style={{ fontWeight: '500' }}>{getCustomerType()}</span>
+          <span style={{ fontWeight: 'bold' }}>Type:</span> <span style={{ fontWeight: 'bold' }}>{getCustomerType()}</span>
           {bill.billType === 'order' && bill.deliveryDate && (
-            <span style={{ fontWeight: '500' }}> | Delivery: {new Date(bill.deliveryDate).toLocaleDateString('en-GB')}</span>
+            <span style={{ fontWeight: 'bold' }}> | Delivery: {new Date(bill.deliveryDate).toLocaleDateString('en-GB')}</span>
           )}
         </div>
         <div style={{ marginBottom: '1px' }}>
-          <span style={{ fontWeight: '700' }}>Customer:</span> <span style={{ fontWeight: '600' }}>{bill.customerName || 'CASH'}</span>
+          <span style={{ fontWeight: 'bold' }}>Customer:</span> <span style={{ fontWeight: 'bold' }}>{bill.customerName || 'CASH'}</span>
         </div>
         {bill.phoneNumber && (
           <div style={{ marginTop: '2px' }}>
-            <span style={{ fontWeight: '700' }}>Mobile:</span> <span style={{ fontWeight: '500' }}>{bill.phoneNumber}</span>
+            <span style={{ fontWeight: 'bold' }}>Mobile:</span> <span style={{ fontWeight: 'bold' }}>{bill.phoneNumber}</span>
           </div>
         )}
         {bill.customerEmail && (
           <div style={{ marginTop: '2px' }}>
-            <span style={{ fontWeight: '700' }}>Email:</span> <span style={{ fontWeight: '500' }}>{bill.customerEmail}</span>
+            <span style={{ fontWeight: 'bold' }}>Email:</span> <span style={{ fontWeight: 'bold' }}>{bill.customerEmail}</span>
           </div>
         )}
       </div>
@@ -254,7 +252,7 @@ export function ThermalReceipt({
           display: 'grid',
           gridTemplateColumns: COL,
           fontSize: '8.5px',
-          fontWeight: '500',
+          fontWeight: 'bold',
           color: '#000000',
           padding: '3px 4px',
           backgroundColor: '#ffffff',
@@ -266,19 +264,19 @@ export function ThermalReceipt({
             lineHeight: '1.45',
             wordBreak: 'break-word',
             fontSize: '8.5px',
-            fontWeight: '600',
+            fontWeight: 'bold',
           }}>
             <div>
               {[item.productName, item.sizeName].filter(Boolean).join(' ')}
             </div>
           </div>
-          <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
+          <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: 'bold' }}>
             {formatQty(item.quantity, item.packaging)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: 'bold' }}>
             ₹{Number(item.unitPrice).toFixed(2)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: 'bold' }}>
             ₹{Number(item.totalPrice).toFixed(2)}
           </span>
         </div>
@@ -328,12 +326,12 @@ export function ThermalReceipt({
       {/* ── TOTALS ── */}
       <div style={{ padding: '5px 8px', borderTop: '1px dashed #000000' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
-          <span style={{ fontWeight: '500' }}>Item Total</span>
-          <span style={{ fontWeight: '600' }}>₹{itemTotal.toFixed(2)}</span>
+          <span style={{ fontWeight: 'bold' }}>Item Total</span>
+          <span style={{ fontWeight: 'bold' }}>₹{itemTotal.toFixed(2)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
-          <span style={{ fontWeight: '500' }}>Sub Total</span>
-          <span style={{ fontWeight: '600' }}>₹{itemTotal.toFixed(2)}</span>
+          <span style={{ fontWeight: 'bold' }}>Sub Total</span>
+          <span style={{ fontWeight: 'bold' }}>₹{itemTotal.toFixed(2)}</span>
         </div>
         {discountAmount > 0 && (
           <>
@@ -343,7 +341,7 @@ export function ThermalReceipt({
               fontSize: '8.5px',
               padding: '2px 0',
               color: '#cc0000',
-              fontWeight: '600',
+              fontWeight: 'bold',
             }}>
               <span>Discount</span>
               <span>-₹{discountAmount.toFixed(2)}</span>
@@ -358,9 +356,9 @@ export function ThermalReceipt({
         )}
         {roundOff !== 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
-            <span style={{ fontWeight: '500' }}>Round Off</span>
+            <span style={{ fontWeight: 'bold' }}>Round Off</span>
             {/* ✅ Show + or - sign clearly */}
-            <span style={{ fontWeight: '600' }}>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
+            <span style={{ fontWeight: 'bold' }}>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
           </div>
         )}
 
@@ -379,13 +377,13 @@ export function ThermalReceipt({
 
         {paidAmount > 0 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
-            <span style={{ fontWeight: '500' }}>Paid Amount</span>
-            <span style={{ fontWeight: '500' }}>₹{paidAmount.toFixed(2)}</span>
+            <span style={{ fontWeight: 'bold' }}>Paid Amount</span>
+            <span style={{ fontWeight: 'bold' }}>₹{paidAmount.toFixed(2)}</span>
           </div>
         )}
 
         {dueAmount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: '700', color: '#cc0000', padding: '1px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: 'bold', color: '#cc0000', padding: '1px 0' }}>
             <span>Due Amount</span>
             <span>₹{dueAmount.toFixed(2)}</span>
           </div>
@@ -393,7 +391,7 @@ export function ThermalReceipt({
 
         {showReturnSection && (
           <div style={{
-            display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: '700',
+            display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: 'bold',
             marginTop: '4px', padding: '3px', backgroundColor: '#ffffff', border: '1px solid #000000',
           }}>
             <span>FINAL AMOUNT</span>
@@ -405,8 +403,8 @@ export function ThermalReceipt({
       {/* ── AMOUNT IN WORDS ── */}
       <div style={{ padding: '4px 8px 4px', lineHeight: '1.45', borderTop: '1px dashed #000000' }}>
         {/* ✅ Fix: use Math.abs(roundedTotal) for words, handle paid/due correctly */}
-        <span style={{ fontSize: '8px', fontWeight: '700' }}>Amt in Words: </span>
-        <span style={{ fontSize: '8px', fontWeight: '400' }}>
+        <span style={{ fontSize: '8px', fontWeight: 'bold' }}>Amt in Words: </span>
+        <span style={{ fontSize: '8px', fontWeight: 'bold' }}>
           {numberToWords(Math.abs(dueAmount <= 0 ? roundedTotal : dueAmount))} Only
         </span>
       </div>
@@ -415,9 +413,9 @@ export function ThermalReceipt({
       {bill.paymentMode === 'Cash' && changeGiven > 0 && (
         <div style={{ padding: '4px 8px 4px', fontSize: '8px', borderTop: '1px dashed #000000' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Change Given</span>
+            <span style={{ fontWeight: 'bold' }}>Change Given</span>
             {/* ✅ Fix: was roundedTotal - cashReceived (negative), now cashReceived - roundedTotal */}
-            <span>₹{changeGiven.toFixed(2)}</span>
+            <span style={{ fontWeight: 'bold' }}>₹{changeGiven.toFixed(2)}</span>
           </div>
         </div>
       )}
@@ -444,7 +442,7 @@ export function ThermalReceipt({
         textAlign: 'center', backgroundColor: '#ffffff',
         borderTop: '1px solid #000000', borderBottom: '1px solid #000000',
       }}>
-        <span style={{ fontWeight: '700' }}>Payment:</span> <span style={{ fontWeight: '500' }}>{getPaymentTag(bill)}</span>
+        <span style={{ fontWeight: 'bold' }}>Payment:</span> <span style={{ fontWeight: 'bold' }}>{getPaymentTag(bill)}</span>
       </div>
 
       {/* ── FOOTER ── */}
@@ -454,7 +452,7 @@ export function ThermalReceipt({
         borderTop: '1px dashed #000000',
         textAlign: 'center',
         fontSize: '8px',
-        fontWeight: '700',
+        fontWeight: 'bold',
         marginBottom: '0px',
         paddingBottom: '0px',
       }}>

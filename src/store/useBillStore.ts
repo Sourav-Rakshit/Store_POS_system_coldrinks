@@ -25,6 +25,7 @@ interface BillState {
   initializeFromStorage: () => Promise<void>;
   addItem: (item: BillItem) => void;
   updateItemQuantity: (itemId: string, quantity: number) => void;
+  updateItemPrice: (itemId: string, unitPrice: number) => void;
   removeItem: (itemId: string) => void;
   clearCurrentBill: () => void;
   setCustomerInfo: (name: string, phone: string) => void;
@@ -138,6 +139,27 @@ export const useBillStore = create<BillState>()(
           return item;
         });
         
+        set({
+          currentBill: {
+            ...currentBill,
+            items: updatedItems,
+          },
+        });
+      },
+
+      updateItemPrice: (itemId, unitPrice) => {
+        const { currentBill } = get();
+        const updatedItems = currentBill.items.map((item) => {
+          if (item.id === itemId) {
+            return {
+              ...item,
+              unitPrice,
+              totalPrice: item.quantity * unitPrice,
+            };
+          }
+          return item;
+        });
+
         set({
           currentBill: {
             ...currentBill,

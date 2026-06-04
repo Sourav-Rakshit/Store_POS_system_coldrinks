@@ -126,20 +126,20 @@ export function ThermalReceipt({
   const showReturnSection = mappedReturnedItems.length > 0 || refundAmount > 0;
 
   // ✅ Shared column definition — single source of truth
-  const COL = '1fr 22px 42px 42px';
+  const COL = '1fr 22px 48px 52px';
 
   return (
     <div
       data-receipt-root="true"
       style={{
         width: '52mm',
-        minHeight: '420px',
+        minHeight: 'unset',
         margin: '0 auto',
         backgroundColor: '#ffffff',
         fontFamily: '"Courier New", Courier, monospace',
         fontSize: '9px',
         color: '#000000',
-        padding: '0 0 60px 0',
+        padding: '0 0 8px 0',
         boxSizing: 'border-box',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
@@ -149,7 +149,7 @@ export function ThermalReceipt({
       {/* ── HEADER ── */}
       <div style={{
         padding: '8px 8px 6px',
-        borderBottom: '1px dashed #000',
+        borderBottom: '1px dashed #000000',
         textAlign: 'center',
       }}>
         {/* Logo image */}
@@ -181,8 +181,8 @@ export function ThermalReceipt({
         }}>
           <div style={{ flex: 1, borderTop: '1px solid #000' }} />
           <div style={{
-            fontSize: '13px',
-            fontWeight: 'bold',
+            fontSize: '14px',
+            fontWeight: '900',
             letterSpacing: '1px',
             whiteSpace: 'nowrap',
             padding: '0 4px',
@@ -192,39 +192,39 @@ export function ThermalReceipt({
           <div style={{ flex: 1, borderTop: '1px solid #000' }} />
         </div>
 
-        <div style={{ fontSize: '8px', color: '#444', marginTop: '2px' }}>
+        <div style={{ fontSize: '8px', fontWeight: '400', color: '#000000', marginTop: '2px' }}>
           {settings.shopAddress || 'Shop Address'}
         </div>
-        <div style={{ fontSize: '8px', color: '#444', marginTop: '1px' }}>
+        <div style={{ fontSize: '8px', fontWeight: '400', color: '#000000', marginTop: '1px' }}>
           Ph: {settings.shopPhone || '9876543210'}
         </div>
       </div>
 
       {/* ── BILL INFO ── */}
-      <div style={{ padding: '4px 8px', fontSize: '8px' }}>
+      <div style={{ padding: '4px 8px', fontSize: '8.5px', fontWeight: '600' }}>
         <div>INV: {bill.invoiceNumber}</div>
         <div>DATE: {dateStr} | TIME: {timeStr}</div>
       </div>
 
       {/* ── CUSTOMER ── */}
-      <div style={{ padding: '4px 8px 5px', borderBottom: '1px dashed #000' }}>
-        <div style={{ fontSize: '8px', marginBottom: '2px' }}>
-          <span style={{ fontWeight: 'bold' }}>Type:</span> {getCustomerType()}
+      <div style={{ padding: '4px 8px 5px', borderBottom: '1px dashed #000000', fontSize: '9px' }}>
+        <div style={{ marginBottom: '2px' }}>
+          <span style={{ fontWeight: '700' }}>Type:</span> <span style={{ fontWeight: '500' }}>{getCustomerType()}</span>
           {bill.billType === 'order' && bill.deliveryDate && (
-            <span> | Delivery: {new Date(bill.deliveryDate).toLocaleDateString('en-GB')}</span>
+            <span style={{ fontWeight: '500' }}> | Delivery: {new Date(bill.deliveryDate).toLocaleDateString('en-GB')}</span>
           )}
         </div>
-        <div style={{ fontSize: '8px', marginBottom: '1px' }}>
-          <span style={{ fontWeight: 'bold' }}>Customer:</span> {bill.customerName || 'CASH'}
+        <div style={{ marginBottom: '1px' }}>
+          <span style={{ fontWeight: '700' }}>Customer:</span> <span style={{ fontWeight: '600' }}>{bill.customerName || 'CASH'}</span>
         </div>
         {bill.phoneNumber && (
-          <div style={{ fontSize: '8px', marginTop: '2px' }}>
-            <span style={{ fontWeight: 'bold' }}>Mobile:</span> {bill.phoneNumber}
+          <div style={{ marginTop: '2px' }}>
+            <span style={{ fontWeight: '700' }}>Mobile:</span> <span style={{ fontWeight: '500' }}>{bill.phoneNumber}</span>
           </div>
         )}
         {bill.customerEmail && (
-          <div style={{ fontSize: '8px', marginTop: '2px' }}>
-            <span style={{ fontWeight: 'bold' }}>Email:</span> {bill.customerEmail}
+          <div style={{ marginTop: '2px' }}>
+            <span style={{ fontWeight: '700' }}>Email:</span> <span style={{ fontWeight: '500' }}>{bill.customerEmail}</span>
           </div>
         )}
       </div>
@@ -233,11 +233,14 @@ export function ThermalReceipt({
       <div style={{
         display: 'grid',
         gridTemplateColumns: COL,
-        fontSize: '8px',
-        fontWeight: 'bold',
-        backgroundColor: '#f0f0f0',
+        fontSize: '9px',
+        fontWeight: '800',
+        color: '#000000',
+        backgroundColor: '#ffffff',
         padding: '3px 4px',
-        borderBottom: '1px solid #000',
+        borderTop: '1px solid #000000',
+        borderBottom: '1.5px solid #000000',
+        textTransform: 'uppercase',
       }}>
         <span>Item</span>
         <span style={{ textAlign: 'center' }}>Qty</span>
@@ -250,23 +253,32 @@ export function ThermalReceipt({
         <div key={index} style={{
           display: 'grid',
           gridTemplateColumns: COL,
-          fontSize: '8px',
-          padding: '3px 4px 3px',
-          backgroundColor: index % 2 === 0 ? '#fafafa' : '#ffffff',
+          fontSize: '8.5px',
+          fontWeight: '500',
+          color: '#000000',
+          padding: '3px 4px',
+          backgroundColor: '#ffffff',
           alignItems: 'start',
+          borderBottom: '0.5px dashed #ccc',
         }}>
-          <div style={{ paddingRight: '3px', lineHeight: '1.45', wordBreak: 'break-word' }}>
+          <div style={{
+            paddingRight: '3px',
+            lineHeight: '1.45',
+            wordBreak: 'break-word',
+            fontSize: '8.5px',
+            fontWeight: '600',
+          }}>
             <div>
               {[item.productName, item.sizeName].filter(Boolean).join(' ')}
             </div>
           </div>
-          <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '2px' }}>
+          <span style={{ textAlign: 'center', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
             {formatQty(item.quantity, item.packaging)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
             ₹{Number(item.unitPrice).toFixed(2)}
           </span>
-          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px' }}>
+          <span style={{ textAlign: 'right', alignSelf: 'flex-start', paddingTop: '2px', fontSize: '8.5px', fontWeight: '600' }}>
             ₹{Number(item.totalPrice).toFixed(2)}
           </span>
         </div>
@@ -276,11 +288,11 @@ export function ThermalReceipt({
       {showReturnSection && (
         <div style={{
           padding: '4px 8px',
-          borderTop: '1px dashed #000',
-          borderBottom: '1px dashed #000',
-          backgroundColor: '#fff5f5',
+          borderTop: '1px dashed #000000',
+          borderBottom: '1px dashed #000000',
+          backgroundColor: '#ffffff',
         }}>
-          <div style={{ fontSize: '8px', fontWeight: 'bold', color: '#cc0000', marginBottom: '3px' }}>
+          <div style={{ fontSize: '8px', fontWeight: 'bold', color: '#000000', marginBottom: '3px' }}>
             RETURNED ITEMS:
           </div>
           {mappedReturnedItems.map((item, index) => (
@@ -288,8 +300,9 @@ export function ThermalReceipt({
               display: 'grid',
               gridTemplateColumns: '1fr 22px 42px',
               fontSize: '7px',
+              fontWeight: 'bold',
               marginBottom: '2px',
-              color: '#cc0000',
+              color: '#000000',
               alignItems: 'start',
             }}>
               <span style={{
@@ -313,51 +326,66 @@ export function ThermalReceipt({
       )}
 
       {/* ── TOTALS ── */}
-      <div style={{ padding: '4px 8px 4px', borderTop: '1px dashed #000' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
-          <span>Item Total</span>
-          <span>₹{itemTotal.toFixed(2)}</span>
+      <div style={{ padding: '5px 8px', borderTop: '1px dashed #000000' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
+          <span style={{ fontWeight: '500' }}>Item Total</span>
+          <span style={{ fontWeight: '600' }}>₹{itemTotal.toFixed(2)}</span>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
-          <span>Sub Total</span>
-          <span>₹{itemTotal.toFixed(2)}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
+          <span style={{ fontWeight: '500' }}>Sub Total</span>
+          <span style={{ fontWeight: '600' }}>₹{itemTotal.toFixed(2)}</span>
         </div>
         {discountAmount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0', color: '#cc0000' }}>
-            <span>Discount</span>
-            <span>-₹{discountAmount.toFixed(2)}</span>
-          </div>
+          <>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '8.5px',
+              padding: '2px 0',
+              color: '#cc0000',
+              fontWeight: '600',
+            }}>
+              <span>Discount</span>
+              <span>-₹{discountAmount.toFixed(2)}</span>
+            </div>
+            {/* Full width separator after discount */}
+            <div style={{
+              width: '100%',
+              borderBottom: '1px dashed #000',
+              margin: '2px 0',
+            }} />
+          </>
         )}
         {roundOff !== 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
-            <span>Round Off</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
+            <span style={{ fontWeight: '500' }}>Round Off</span>
             {/* ✅ Show + or - sign clearly */}
-            <span>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
+            <span style={{ fontWeight: '600' }}>{roundOff > 0 ? '+' : ''}₹{roundOff.toFixed(2)}</span>
           </div>
         )}
 
         {/* Grand Total */}
         <div style={{
-          borderTop: '1px solid #000',
-          borderBottom: '1px solid #000',
-          padding: '4px 0',
+          borderTop: '1.5px solid #000000',
+          borderBottom: '1.5px solid #000000',
+          padding: '5px 0',
           margin: '4px 0',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 'bold' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '900' }}>
             <span>GRAND TOTAL</span>
             <span>₹{roundedTotal.toFixed(2)}</span>
           </div>
         </div>
 
         {paidAmount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8px', padding: '1px 0' }}>
-            <span>Paid Amount</span>
-            <span>₹{paidAmount.toFixed(2)}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', padding: '1px 0' }}>
+            <span style={{ fontWeight: '500' }}>Paid Amount</span>
+            <span style={{ fontWeight: '500' }}>₹{paidAmount.toFixed(2)}</span>
           </div>
         )}
 
         {dueAmount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontWeight: 'bold', color: '#cc0000', padding: '1px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: '700', color: '#cc0000', padding: '1px 0' }}>
             <span>Due Amount</span>
             <span>₹{dueAmount.toFixed(2)}</span>
           </div>
@@ -365,8 +393,8 @@ export function ThermalReceipt({
 
         {showReturnSection && (
           <div style={{
-            display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontWeight: 'bold',
-            marginTop: '4px', padding: '3px', backgroundColor: '#f0f0f0', border: '1px solid #ccc',
+            display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: '700',
+            marginTop: '4px', padding: '3px', backgroundColor: '#ffffff', border: '1px solid #000000',
           }}>
             <span>FINAL AMOUNT</span>
             <span>₹{dueAmount.toFixed(2)}</span>
@@ -375,15 +403,17 @@ export function ThermalReceipt({
       </div>
 
       {/* ── AMOUNT IN WORDS ── */}
-      <div style={{ padding: '4px 8px 4px', fontSize: '7.5px', lineHeight: '1.45', borderTop: '1px dashed #000' }}>
+      <div style={{ padding: '4px 8px 4px', lineHeight: '1.45', borderTop: '1px dashed #000000' }}>
         {/* ✅ Fix: use Math.abs(roundedTotal) for words, handle paid/due correctly */}
-        <span style={{ fontWeight: 'bold' }}>Amt in Words: </span>
-        {numberToWords(Math.abs(dueAmount <= 0 ? roundedTotal : dueAmount))} Only
+        <span style={{ fontSize: '8px', fontWeight: '700' }}>Amt in Words: </span>
+        <span style={{ fontSize: '8px', fontWeight: '400' }}>
+          {numberToWords(Math.abs(dueAmount <= 0 ? roundedTotal : dueAmount))} Only
+        </span>
       </div>
 
       {/* ── CHANGE GIVEN ── */}
       {bill.paymentMode === 'Cash' && changeGiven > 0 && (
-        <div style={{ padding: '4px 8px 4px', fontSize: '8px', borderTop: '1px dotted #ccc' }}>
+        <div style={{ padding: '4px 8px 4px', fontSize: '8px', borderTop: '1px dashed #000000' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>Change Given</span>
             {/* ✅ Fix: was roundedTotal - cashReceived (negative), now cashReceived - roundedTotal */}
@@ -396,13 +426,13 @@ export function ThermalReceipt({
       <div style={{ textAlign: 'center', margin: '4px 8px 0', padding: '2px 0' }}>
         <span style={{
           fontSize: '12px',
-          fontWeight: 'bold',
-          color: statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545',
-          border: `2px solid ${statusStamp === 'PAID' ? '#28a745' : statusStamp === 'DUE' ? '#fd7e14' : '#dc3545'}`,
+          fontWeight: '900',
+          color: statusStamp === 'PAID' ? '#166534' : statusStamp === 'DUE' ? '#9a3412' : '#991b1b',
+          border: `2px solid ${statusStamp === 'PAID' ? '#166534' : statusStamp === 'DUE' ? '#9a3412' : '#991b1b'}`,
           padding: '3px 10px',
           borderRadius: '3px',
           display: 'inline-block',
-          letterSpacing: '2px',
+          letterSpacing: '3px',
         }}>
           {statusStamp}
         </span>
@@ -411,16 +441,22 @@ export function ThermalReceipt({
       {/* ── PAYMENT METHOD ── */}
       <div style={{
         marginTop: '6px', padding: '4px 8px', fontSize: '8px',
-        textAlign: 'center', backgroundColor: '#f0f0f0', borderTop: '1px solid #000',
+        textAlign: 'center', backgroundColor: '#ffffff',
+        borderTop: '1px solid #000000', borderBottom: '1px solid #000000',
       }}>
-        <span style={{ fontWeight: 'bold' }}>Payment:</span> {getPaymentTag(bill)}
+        <span style={{ fontWeight: '700' }}>Payment:</span> <span style={{ fontWeight: '500' }}>{getPaymentTag(bill)}</span>
       </div>
 
       {/* ── FOOTER ── */}
       <div style={{
-        marginTop: '8px', padding: '6px 8px',
-        borderTop: '1px dashed #000', textAlign: 'center',
-        fontSize: '8px', fontWeight: 'bold',
+        marginTop: '8px',
+        padding: '6px 8px 0px 8px',
+        borderTop: '1px dashed #000000',
+        textAlign: 'center',
+        fontSize: '8px',
+        fontWeight: '700',
+        marginBottom: '0px',
+        paddingBottom: '0px',
       }}>
         Thank You... Visit Again!
       </div>

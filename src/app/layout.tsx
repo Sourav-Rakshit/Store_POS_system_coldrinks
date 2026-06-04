@@ -4,6 +4,7 @@ import './globals.css';
 import { ToastProvider } from '@/components/Toast';
 import { AppShell } from '@/components/layout/AppShell';
 import { SessionProvider } from '@/components/SessionProvider';
+import { TopProgressBar } from '@/components/layout/TopProgressBar';
 
 const plusJakartaSans = Plus_Jakarta_Sans({ 
   subsets: ['latin'],
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} font-sans overflow-x-hidden`}>
         <SessionProvider>
           <ToastProvider>
+            <TopProgressBar />
             <AppShell>{children}</AppShell>
           </ToastProvider>
         </SessionProvider>

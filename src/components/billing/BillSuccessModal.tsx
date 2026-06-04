@@ -156,9 +156,9 @@ export function BillSuccessModal({
   return (
     <>
       {/* Modal Overlay */}
-      <div className="fixed inset-0 bg-black/50 flex items-end lg:items-center justify-center z-[100] lg:p-4">
+      <div className="fixed inset-0 flex items-end lg:items-center justify-center z-[100] lg:p-4 animate-fade-in-overlay">
         {/* Modal Content */}
-        <div className="bg-[#f9fafb] lg:bg-white rounded-t-[20px] lg:rounded-2xl shadow-2xl max-w-md w-full h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-10 lg:zoom-in-95 duration-200">
+        <div className="bg-[#f9fafb] lg:bg-white rounded-t-[20px] lg:rounded-2xl shadow-2xl max-w-md w-full h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col overflow-hidden animate-slide-up lg:animate-scale-in">
           {/* Header */}
           <div className="bg-white lg:bg-transparent p-4 pb-3 lg:p-6 text-center border-b border-[#f3f4f6] shrink-0">
             {/* Animated Green Checkmark */}

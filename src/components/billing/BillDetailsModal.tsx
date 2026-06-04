@@ -146,9 +146,9 @@ export function BillDetailsModal({ billId, isOpen, onClose }: BillDetailsModalPr
   const isAnyLoading = isDownloading || isSharing || isWhatsapping;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-end lg:items-center justify-center bg-black/50 backdrop-blur-sm lg:p-4" style={{ touchAction: 'none' }}>
-      <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative bg-white w-full lg:max-w-lg rounded-t-[20px] lg:rounded-2xl shadow-2xl overflow-hidden h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-[120] flex items-end lg:items-center justify-center lg:p-4 animate-fade-in-overlay" style={{ touchAction: 'none' }}>
+      <div className="absolute inset-0 bg-transparent" onClick={onClose} />
+      <div className="relative bg-white w-full lg:max-w-lg rounded-t-[20px] lg:rounded-2xl shadow-2xl overflow-hidden h-[95vh] lg:h-auto lg:max-h-[90vh] flex flex-col animate-slide-up lg:animate-scale-in">
         <div className="p-4 lg:p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
           <div>
             <h3 className="text-[17px] font-semibold">Bill Details</h3>

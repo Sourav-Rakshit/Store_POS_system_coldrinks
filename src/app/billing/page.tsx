@@ -11,7 +11,7 @@ import { useToast } from '@/components/Toast';
 import { useRefetchOnFocus } from '@/hooks/useRefetchOnFocus';
 import { validateStock } from '@/lib/validateStock';
 import { formatCurrency, formatStock } from '@/lib/utils';
-import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu, Pin } from 'lucide-react';
+import { Search, Plus, Minus, X, Printer, Receipt, CreditCard, Smartphone, AlertTriangle, User, Calendar, Package, ArrowRight, Home, Menu, Pin, Loader2, Check } from 'lucide-react';
 import { Product, ProductSize, BillItem, StoreSettings, CustomerWithStats, PaymentMode } from '@/types';
 import { BillSuccessModal } from '@/components/billing/BillSuccessModal';
 import { CustomerSearchDropdown } from '@/components/customers/CustomerSearchDropdown';
@@ -30,6 +30,7 @@ export default function BillingPage() {
     addItem,
     removeItem,
     updateItemQuantity,
+    updateItemPrice,
     setCustomerInfo,
     setDiscount,
     setPaymentMode,
@@ -79,6 +80,22 @@ export default function BillingPage() {
   const [deliveryDate, setDeliveryDate] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [customPrice, setCustomPrice] = useState<number | null>(null);
+  const [packagingCustomPrice, setPackagingCustomPrice] = useState<number | null>(null);
+  const [editingPriceItemId, setEditingPriceItemId] = useState<string | null>(null);
+  const [tempPrice, setTempPrice] = useState<string>('');
+
+  const handleSavePrice = (itemId: string) => {
+    const priceNum = parseFloat(tempPrice);
+    if (isNaN(priceNum) || priceNum < 0) {
+      addToast('error', 'Please enter a valid price');
+      return;
+    }
+    updateItemPrice(itemId, priceNum);
+    setEditingPriceItemId(null);
+    addToast('success', 'Price updated successfully');
+  };
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedBill, setSavedBill] = useState<BillItem[]>([]);
@@ -201,12 +218,14 @@ export default function BillingPage() {
     setPackagingModal({ product, size });
     setPackagingQty(1);
     setPackagingType('carton');
+    setPackagingCustomPrice(null);
   };
 
   const handleAddItem = () => {
     if (!selectedProduct || !selectedSize) return;
 
-    const unitPrice = calculatePrice();
+    const defaultPrice = calculatePrice();
+    const unitPrice = customPrice !== null ? customPrice : defaultPrice;
     const item: BillItem = {
       id: crypto.randomUUID(),
       productId: selectedProduct.id,
@@ -225,6 +244,7 @@ export default function BillingPage() {
     setSelectedSize(null);
     setQuantity(1);
     setPackaging('carton');
+    setCustomPrice(null);
   };
 
   const togglePin = async (productId: string, isPinned: boolean) => {
@@ -760,6 +780,7 @@ export default function BillingPage() {
                       onChange={(e) => {
                         const size = selectedProduct.sizes.find(s => s.id === e.target.value);
                         setSelectedSize(size || null);
+                        setCustomPrice(null);
                       }}
                       className="w-full bg-white border border-slate-200 rounded-lg text-sm p-2"
                     >
@@ -772,12 +793,38 @@ export default function BillingPage() {
                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Packaging</p>
                     <select
                       value={packaging}
-                      onChange={(e) => setPackaging(e.target.value as 'bottle' | 'carton')}
+                      onChange={(e) => {
+                        setPackaging(e.target.value as 'bottle' | 'carton');
+                        setCustomPrice(null);
+                      }}
                       className="w-full bg-white border border-slate-200 rounded-lg text-sm p-2"
                     >
                       <option value="carton">Carton ({selectedSize.bottlesPerCarton} pcs)</option>
                       <option value="bottle">Bottle</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Unit Price (₹) <span className="text-[9px] text-[#16a34a] font-normal font-sans">(This Bill Only)</span></p>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="number"
+                        value={customPrice !== null ? customPrice : calculatePrice()}
+                        onChange={(e) => setCustomPrice(e.target.value === '' ? null : Number(e.target.value))}
+                        className="w-full bg-white border border-slate-200 rounded-lg text-sm p-2 font-semibold text-slate-800 focus:outline-none focus:border-primary"
+                        placeholder="Enter price"
+                      />
+                      {customPrice !== null && (
+                        <button
+                          onClick={() => setCustomPrice(null)}
+                          className="px-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs text-slate-500 font-semibold"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -812,31 +859,94 @@ export default function BillingPage() {
             <div className="space-y-3 mb-4 max-h-64 overflow-auto">
               {currentBill.items.length > 0 ? (
                 currentBill.items.map(item => (
-                  <div key={item.id} className="flex justify-between items-center bg-slate-50 lg:bg-transparent p-2 lg:p-0 rounded-lg lg:rounded-none">
-                    <div className="flex-1">
-                      <h5 className="font-medium text-[13px] lg:text-sm">{item.productName} ({item.sizeName})</h5>
+                  <div key={item.id} className="bg-slate-50 border border-slate-200/50 rounded-lg p-2 flex flex-col gap-1 relative">
+                    {/* Delete button (top right) */}
+                    <button 
+                      onClick={() => removeItem(item.id)} 
+                      className="absolute top-1.5 right-1.5 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Remove item"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Product details */}
+                    <div className="pr-6">
+                      <h5 className="font-semibold text-slate-800 text-[13px] leading-tight">
+                        {item.productName} ({item.sizeName})
+                      </h5>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500">
+                        {editingPriceItemId === item.id ? (
+                          <div className="flex items-center gap-1 bg-white p-0.5 border border-[#16a34a] rounded">
+                            <span className="pl-1 text-slate-600">₹</span>
+                            <input
+                              type="number"
+                              value={tempPrice}
+                              onChange={(e) => setTempPrice(e.target.value)}
+                              className="w-16 h-5 font-semibold text-slate-800 focus:outline-none text-[11px]"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSavePrice(item.id);
+                                if (e.key === 'Escape') setEditingPriceItemId(null);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleSavePrice(item.id)}
+                              className="p-0.5 text-green-600 hover:bg-green-50 rounded"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setEditingPriceItemId(null)}
+                              className="p-0.5 text-red-500 hover:bg-red-50 rounded"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span>₹{item.unitPrice} per {item.packaging === 'carton' ? 'carton' : 'bottle'}</span>
+                            <button
+                              onClick={() => {
+                                setEditingPriceItemId(item.id);
+                                setTempPrice(String(item.unitPrice));
+                              }}
+                              className="text-[10px] text-[#16a34a] hover:underline font-semibold"
+                            >
+                              (Edit Price)
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 lg:gap-2">
+                    {/* Actions and total */}
+                    <div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-slate-200/40">
+                      {/* Quantity selector */}
                       <div className="flex items-center border border-slate-200 rounded overflow-hidden bg-white h-[24px]">
                         <button
                           onClick={() => { if (item.quantity > 1) updateItemQuantity(item.id, item.quantity - 1); }}
-                          className="px-[6px] hover:bg-slate-100 flex items-center justify-center"
+                          className="px-1.5 h-full hover:bg-slate-50 flex items-center justify-center border-r border-slate-200"
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-2.5 h-2.5 text-slate-600" />
                         </button>
-                        <span className="px-2 font-bold text-[12px] min-w-[20px] text-center">{formatQty(item.quantity, item.packaging)}</span>
+                        <span className="px-2 font-bold text-[12px] min-w-[20px] text-center text-slate-800">
+                          {formatQty(item.quantity, item.packaging)}
+                        </span>
                         <button
                           onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                          className="px-[6px] hover:bg-slate-100 flex items-center justify-center"
+                          className="px-1.5 h-full hover:bg-slate-50 flex items-center justify-center border-l border-slate-200"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-2.5 h-2.5 text-slate-600" />
                         </button>
                       </div>
-                      <p className="font-semibold text-[13px] lg:text-sm w-[40px] text-right">{formatCurrency(item.totalPrice)}</p>
-                      <button onClick={() => removeItem(item.id)} className="text-red-500 hover:text-red-700 ml-1">
-                        <X className="w-[16px] h-[16px]" />
-                      </button>
+
+                      {/* Total price */}
+                      <div className="text-right flex items-baseline gap-1">
+                        <span className="text-[10px] text-slate-400 font-medium">Total:</span>
+                        <span className="font-bold text-[13px] text-slate-900">
+                          {formatCurrency(item.totalPrice)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -1083,7 +1193,14 @@ export default function BillingPage() {
                       }`}
                     style={isDisabled ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                   >
-                    🖨 Generate Bill
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Generating Bill...</span>
+                      </>
+                    ) : (
+                      <span>🖨 Generate Bill</span>
+                    )}
                   </button>
 
                   {/* ✅ Warning messages */}
@@ -1189,7 +1306,10 @@ export default function BillingPage() {
             <div className="flex gap-3 mb-6">
               {/* Cartons first (default) */}
               <button
-                onClick={() => setPackagingType('carton')}
+                onClick={() => {
+                  setPackagingType('carton');
+                  setPackagingCustomPrice(null);
+                }}
                 className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${packagingType === 'carton'
                     ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
                     : 'border-2 border-[#e5e7eb] bg-white'
@@ -1205,7 +1325,10 @@ export default function BillingPage() {
 
               {/* Bottles second */}
               <button
-                onClick={() => setPackagingType('bottle')}
+                onClick={() => {
+                  setPackagingType('bottle');
+                  setPackagingCustomPrice(null);
+                }}
                 className={`flex-1 h-[80px] rounded-[12px] flex flex-col items-center justify-center gap-1 transition-all ${packagingType === 'bottle'
                     ? 'border-2 border-[#16a34a] bg-[#f0fdf4]'
                     : 'border-2 border-[#e5e7eb] bg-white'
@@ -1217,12 +1340,37 @@ export default function BillingPage() {
               </button>
             </div>
 
+            {/* Custom Price Input (Mobile) */}
+            <div className="mb-6">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1 px-1">
+                Unit Price (₹) <span className="text-[10px] text-[#16a34a] font-normal font-sans">(This Bill Only)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={packagingCustomPrice !== null ? packagingCustomPrice : (packagingType === 'carton' ? packagingModal.size.pricePerCarton : packagingModal.size.pricePerBottle)}
+                  onChange={(e) => setPackagingCustomPrice(e.target.value === '' ? null : Number(e.target.value))}
+                  className="flex-1 h-[44px] rounded-[10px] border border-slate-200 bg-slate-50 px-3 text-[14px] font-semibold text-slate-800 focus:outline-none focus:border-[#16a34a]"
+                  placeholder="Enter custom price"
+                />
+                {packagingCustomPrice !== null && (
+                  <button
+                    onClick={() => setPackagingCustomPrice(null)}
+                    className="h-[44px] px-3 bg-slate-100 hover:bg-slate-200 rounded-[10px] text-xs text-slate-500 font-semibold"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={() => {
                 const isCarton = packagingType === 'carton';
-                const unitPrice = isCarton
+                const defaultPrice = isCarton
                   ? packagingModal.size.pricePerCarton
                   : packagingModal.size.pricePerBottle;
+                const unitPrice = packagingCustomPrice !== null ? packagingCustomPrice : defaultPrice;
                 addItem({
                   id: crypto.randomUUID(),
                   productId: packagingModal.product.id,
@@ -1236,6 +1384,7 @@ export default function BillingPage() {
                 });
                 addToast('success', `Added ${packagingQty} ${packagingType === 'carton' ? 'cartons' : 'bottles'} to bill`);
                 setPackagingModal(null);
+                setPackagingCustomPrice(null);
               }}
               className="w-full h-[46px] bg-[#16a34a] text-white rounded-[10px] font-semibold text-[15px]"
             >
